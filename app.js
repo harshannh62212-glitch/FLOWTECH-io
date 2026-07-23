@@ -1,4 +1,4 @@
-// FlowTech Interactive Engine: User Authentication & Linked Dispatch Identity Engine
+// FlowTech Interactive Engine: Mandatory User Auth Gate & Dispatch Linking
 // Central Dispatch Hub: 1231 Meadow Creek Dr
 
 let currentStep = 1;
@@ -8,18 +8,13 @@ let isUrgent = true;
 let debounceTimer = null;
 let currentGpsCoords = null;
 
-// User Profile State
-let activeUser = {
-  fullName: 'Sarah Connor',
-  email: 'sarah@skynet-defense.com',
-  phone: '(555) 839-2041',
-  address: '450 N MacArthur Blvd, Irving, TX'
-};
+// Customer User Profile State
+let activeUser = null;
 
 const API_BASE = window.location.origin;
 
 document.addEventListener('DOMContentLoaded', () => {
-  initUserProfile();
+  checkMandatoryAuth();
   fetchBackendHealth();
   updateEstimateBackend();
   startTelemetryTicker();
@@ -44,26 +39,113 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // -------------------------------------------------------------
-// USER AUTHENTICATION HANDLERS
+// MANDATORY AUTH WELCOME GATE & TAB SWITCHER
 // -------------------------------------------------------------
-function initUserProfile() {
+function checkMandatoryAuth() {
   const saved = localStorage.getItem('flowtech_user_profile');
+  const overlay = document.getElementById('mandatoryAuthOverlay');
+
   if (saved) {
     try {
       activeUser = JSON.parse(saved);
+      if (overlay) overlay.style.display = 'none';
+      updateUserUI();
+      return;
     } catch (e) {}
   }
+
+  // Prompt mandatory auth lock overlay on first visit
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function openAuthOverlay() {
+  const overlay = document.getElementById('mandatoryAuthOverlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function switchAuthTab(mode) {
+  const signInForm = document.getElementById('signInForm');
+  const registerForm = document.getElementById('registerForm');
+  const tabSignIn = document.getElementById('tabBtnSignIn');
+  const tabRegister = document.getElementById('tabBtnRegister');
+
+  if (mode === 'signin') {
+    signInForm.style.display = 'block';
+    registerForm.style.display = 'none';
+    tabSignIn.classList.add('active');
+    tabRegister.classList.remove('active');
+  } else {
+    registerForm.style.display = 'block';
+    signInForm.style.display = 'none';
+    tabRegister.classList.add('active');
+    tabSignIn.classList.remove('active');
+  }
+}
+
+function handleUserSignInSubmit(e) {
+  e.preventDefault();
+  const email = document.getElementById('signInEmail').value.trim();
+
+  activeUser = {
+    fullName: email.split('@')[0].toUpperCase(),
+    email: email,
+    phone: '(555) 839-2041',
+    address: '450 N MacArthur Blvd, Irving, TX'
+  };
+
+  saveUserAndUnlock();
+}
+
+function handleUserRegisterSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('regFullName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const address = document.getElementById('regAddress').value.trim();
+
+  activeUser = { fullName: name, email: email, phone: phone, address: address };
+  saveUserAndUnlock();
+}
+
+function executeQuickDemoAuth() {
+  activeUser = {
+    fullName: 'Sarah Connor',
+    email: 'sarah@skynet-defense.com',
+    phone: '(555) 839-2041',
+    address: '450 N MacArthur Blvd, Irving, TX'
+  };
+
+  saveUserAndUnlock();
+}
+
+function saveUserAndUnlock() {
+  localStorage.setItem('flowtech_user_profile', JSON.stringify(activeUser));
+  
+  const overlay = document.getElementById('mandatoryAuthOverlay');
+  if (overlay) overlay.style.display = 'none';
+
   updateUserUI();
+
+  // Send registration to server/Supabase
+  try {
+    fetch(`${API_BASE}/api/user/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(activeUser)
+    });
+  } catch (err) {}
 }
 
 function updateUserUI() {
+  if (!activeUser) return;
+
   const label = document.getElementById('userAuthLabel');
   const stripName = document.getElementById('bookingUserName');
   const heroStatus = document.getElementById('heroUserStatus');
 
-  if (label) label.textContent = activeUser.fullName ? `👤 ${activeUser.fullName}` : 'Sign In / Register';
-  if (stripName) stripName.textContent = activeUser.fullName ? `${activeUser.fullName} (${activeUser.email})` : 'Guest Customer';
-  if (heroStatus) heroStatus.textContent = activeUser.fullName ? `${activeUser.fullName.toUpperCase()} (VERIFIED)` : 'GUEST CUSTOMER';
+  if (label) label.textContent = `👤 ${activeUser.fullName}`;
+  if (stripName) stripName.textContent = `${activeUser.fullName} (${activeUser.email})`;
+  if (heroStatus) heroStatus.textContent = `${activeUser.fullName.toUpperCase()} (VERIFIED)`;
 
   const addressInput = document.getElementById('serviceAddress');
   const phoneInput = document.getElementById('contactPhone');
@@ -72,36 +154,7 @@ function updateUserUI() {
 }
 
 function openAuthModal() {
-  const modal = document.getElementById('authModal');
-  if (modal) modal.classList.add('active');
-}
-
-function closeAuthModal() {
-  const modal = document.getElementById('authModal');
-  if (modal) modal.classList.remove('active');
-}
-
-async function handleUserAuthSubmit(e) {
-  e.preventDefault();
-  const name = document.getElementById('authUserFullName').value.trim();
-  const email = document.getElementById('authUserEmail').value.trim();
-  const phone = document.getElementById('authUserPhone').value.trim();
-  const address = document.getElementById('authUserAddress').value.trim();
-
-  activeUser = { fullName: name, email: email, phone: phone, address: address };
-  localStorage.setItem('flowtech_user_profile', JSON.stringify(activeUser));
-  
-  updateUserUI();
-  closeAuthModal();
-
-  // Send registration to server/Supabase
-  try {
-    await fetch(`${API_BASE}/api/user/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(activeUser)
-    });
-  } catch (err) {}
+  openAuthOverlay();
 }
 
 function scrollToBooking() {
@@ -359,7 +412,8 @@ function selectSlot(btnElement) {
 
 async function updateEstimateBackend() {
   const addressInput = document.getElementById('serviceAddress');
-  const address = addressInput ? addressInput.value : activeUser.address || '450 MacArthur Blvd, Irving, TX';
+  const userAddr = activeUser ? activeUser.address : '450 MacArthur Blvd, Irving, TX';
+  const address = addressInput && addressInput.value ? addressInput.value : userAddr;
 
   const finalPrice = isUrgent ? basePrice : Math.round(basePrice * 0.9);
   const priceElem = document.getElementById('computedEstimate');
@@ -395,6 +449,11 @@ async function updateEstimateBackend() {
 // DISPATCH SUBMISSION LINKED TO USER IDENTITY
 // -------------------------------------------------------------
 async function submitBooking() {
+  if (!activeUser) {
+    openAuthOverlay();
+    return;
+  }
+
   console.log('[Dispatch] Executing booking dispatch for user:', activeUser.fullName);
 
   const addressInput = document.getElementById('serviceAddress');
