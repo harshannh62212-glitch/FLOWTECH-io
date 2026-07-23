@@ -1,4 +1,4 @@
--- FlowTech Supabase Schema: Customer Profiles with Username & Password Auth
+-- FlowTech Supabase Schema: Appointments & Dispatch Center
 
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS public.bookings (
   ticket_id TEXT UNIQUE NOT NULL,
   service_type TEXT NOT NULL,
   priority TEXT DEFAULT 'urgent',
+  scheduled_slot TEXT DEFAULT 'NOW (15 Min)',
+  scheduled_date TEXT DEFAULT '2026-07-24',
   service_address TEXT NOT NULL,
   contact_phone TEXT NOT NULL,
   customer_name TEXT DEFAULT 'Guest Customer',

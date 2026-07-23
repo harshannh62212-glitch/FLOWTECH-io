@@ -1,19 +1,26 @@
-// FlowTech Interactive Engine: Fail-Safe Registration & Auth Engine
+// FlowTech Interactive Engine: Direct Supabase Appointment Database Engine
 // Central Dispatch Hub: 1231 Meadow Creek Dr
 
 let currentStep = 1;
 let selectedService = 'Emergency Pipe Leak';
+let selectedSlot = 'NOW (15 Min)';
 let basePrice = 149;
 let isUrgent = true;
 let debounceTimer = null;
 let currentGpsCoords = null;
 
-// User Profile State
+// Customer User Profile State
 let activeUser = null;
 
 const API_BASE = window.location.origin;
 
+// Direct Supabase Client Credentials
+const SUPABASE_URL = 'https://aebntdjjniirnwthtwlx.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlYm50ZGpqbmlpcm53dGh0d2x4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NzIwNTYsImV4cCI6MjA5ODQ0ODA1Nn0.la5aH5b2Tb5cj5yfVEWHhPKU4_ieCWydEPWH8V81eIg';
+let supabaseClient = null;
+
 document.addEventListener('DOMContentLoaded', () => {
+  initSupabaseClient();
   checkMandatoryAuth();
   fetchBackendHealth();
   updateEstimateBackend();
@@ -37,6 +44,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+function initSupabaseClient() {
+  if (window.supabase) {
+    try {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log('[Supabase Web SDK] Connected to:', SUPABASE_URL);
+    } catch (e) {}
+  }
+}
 
 // -------------------------------------------------------------
 // USERNAME & PASSWORD AUTHENTICATION ENGINE
@@ -115,7 +131,6 @@ async function handleUserSignInSubmit(e) {
     }
   } catch (err) {}
 
-  // Fallback sign in verification
   if (username.toLowerCase() === 'sarah_connor' && password === 'flowtech2026') {
     executeQuickDemoAuth();
   } else if (username && password) {
@@ -135,11 +150,8 @@ async function handleUserSignInSubmit(e) {
   }
 }
 
-// 100% FAIL-SAFE REGISTRATION SUBMIT
 async function handleUserRegisterSubmit(e) {
   e.preventDefault();
-  console.log('[Register] Processing user registration...');
-
   const usernameInput = document.getElementById('regUsername');
   const passwordInput = document.getElementById('regPassword');
   const nameInput = document.getElementById('regFullName');
@@ -154,10 +166,6 @@ async function handleUserRegisterSubmit(e) {
   const phone = phoneInput && phoneInput.value ? phoneInput.value.trim() : '(555) 839-2041';
   const address = addressInput && addressInput.value ? addressInput.value.trim() : '450 N MacArthur Blvd, Irving, TX';
 
-  const errBanner = document.getElementById('authErrorBanner');
-  if (errBanner) errBanner.style.display = 'none';
-
-  // Set active user state
   activeUser = {
     username: username.toLowerCase(),
     fullName: fullName,
@@ -166,25 +174,20 @@ async function handleUserRegisterSubmit(e) {
     address: address
   };
 
-  // Always save profile and unlock site instantly
   saveUserAndUnlock();
 
-  // Send payload to backend asynchronously
-  try {
-    fetch(`${API_BASE}/api/user/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: username,
-        password: password,
-        fullName: fullName,
+  // Save directly to Supabase DB
+  if (supabaseClient) {
+    try {
+      await supabaseClient.from('profiles').upsert([{
+        username: username.toLowerCase(),
+        password_hash: password,
+        full_name: fullName,
         email: email,
         phone: phone,
-        address: address
-      })
-    });
-  } catch (err) {
-    console.log('[Register] Saved locally');
+        default_address: address
+      }]);
+    } catch (e) {}
   }
 }
 
@@ -472,6 +475,7 @@ function setPriority(mode) {
     scheduledBtn.classList.remove('active');
     dateGroup.style.display = 'none';
     isUrgent = true;
+    selectedSlot = 'NOW (15 Min)';
   } else {
     scheduledBtn.classList.add('active');
     urgentBtn.classList.remove('active');
@@ -484,6 +488,7 @@ function setPriority(mode) {
 function selectSlot(btnElement) {
   document.querySelectorAll('.slot-btn').forEach(btn => btn.classList.remove('selected'));
   btnElement.classList.add('selected');
+  selectedSlot = btnElement.textContent.trim();
 }
 
 async function updateEstimateBackend() {
@@ -522,7 +527,7 @@ async function updateEstimateBackend() {
 }
 
 // -------------------------------------------------------------
-// DISPATCH SUBMISSION LINKED TO USERNAME IDENTITY
+// DIRECT SUPABASE APPOINTMENT DATABASE PERSISTENCE
 // -------------------------------------------------------------
 async function submitBooking() {
   if (!activeUser) {
@@ -530,13 +535,16 @@ async function submitBooking() {
     return;
   }
 
-  console.log('[Dispatch] Executing booking dispatch for username:', activeUser.username);
+  console.log('[Dispatch] Storing appointment in Supabase database for user:', activeUser.username);
 
   const addressInput = document.getElementById('serviceAddress');
   const phoneInput = document.getElementById('contactPhone');
+  const dateInput = document.getElementById('bookingDate');
+
   const address = addressInput && addressInput.value ? addressInput.value : activeUser.address || '450 MacArthur Blvd, Irving, TX';
   const phone = phoneInput && phoneInput.value ? phoneInput.value : activeUser.phone || '(555) 839-2041';
-  
+  const scheduledDateVal = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
+
   const priceElem = document.getElementById('computedEstimate');
   const priceText = priceElem ? priceElem.textContent : '$149.00';
   const priceVal = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 149;
@@ -559,39 +567,62 @@ async function submitBooking() {
 
   if (modalTicket) modalTicket.textContent = ticketId;
   if (modalCustomer) modalCustomer.textContent = activeUser.username || 'sarah_connor';
-  if (modalBadge) modalBadge.textContent = `${activeUser.username} (${activeUser.fullName || 'Verified Customer'})`;
-  if (modalService) modalService.textContent = selectedService || 'Emergency Pipe Leak';
+  if (modalBadge) modalBadge.textContent = `@${activeUser.username} (${activeUser.fullName || 'Verified Customer'})`;
+  if (modalService) modalService.textContent = `${selectedService} [Slot: ${selectedSlot}]`;
   if (modalPrice) modalPrice.textContent = `$${priceVal}.00`;
   if (modalEta) modalEta.textContent = `${totalEtaText} (${prepTimeText} prep + ${driveTimeText} drive)`;
 
   openModal();
 
-  try {
-    const payload = {
-      serviceType: selectedService || 'Emergency Pipe Leak',
-      serviceAddress: address,
-      contactPhone: phone,
-      customerName: activeUser.fullName || 'Sarah Connor',
-      customerUsername: activeUser.username || 'sarah_connor',
-      customerEmail: activeUser.email || 'sarah@skynet-defense.com',
-      priority: isUrgent ? 'urgent' : 'scheduled',
-      price: priceVal,
-      lat: currentGpsCoords?.lat,
-      lng: currentGpsCoords?.lng
-    };
+  const appointmentRecord = {
+    ticket_id: ticketId,
+    service_type: selectedService || 'Emergency Pipe Leak',
+    priority: isUrgent ? 'urgent' : 'scheduled',
+    scheduled_slot: selectedSlot,
+    scheduled_date: scheduledDateVal,
+    service_address: address,
+    contact_phone: phone,
+    customer_name: activeUser.fullName || 'Sarah Connor',
+    customer_username: activeUser.username || 'sarah_connor',
+    customer_email: activeUser.email || 'sarah@skynet-defense.com',
+    dispatch_origin: '1231 Meadow Creek Dr',
+    prep_time_mins: 4,
+    drive_time_mins: 8,
+    total_eta_mins: 12,
+    estimated_price: priceVal,
+    status: 'dispatched',
+    technician_name: 'Alex Martinez',
+    created_at: new Date().toISOString()
+  };
 
-    const res = await fetch(`${API_BASE}/api/dispatch`, {
+  // 1. Direct Client-side Supabase Database Insertion
+  if (supabaseClient) {
+    try {
+      const { data, error } = await supabaseClient.from('bookings').insert([appointmentRecord]);
+      if (!error) console.log('[Supabase DB] Appointment stored successfully:', ticketId);
+    } catch (e) {
+      console.warn('[Supabase DB] Client insertion notice:', e.message);
+    }
+  }
+
+  // 2. Express Backend API Backup Insertion
+  try {
+    fetch(`${API_BASE}/api/dispatch`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        serviceType: selectedService,
+        serviceAddress: address,
+        contactPhone: phone,
+        customerName: activeUser.fullName,
+        customerUsername: activeUser.username,
+        customerEmail: activeUser.email,
+        priority: isUrgent ? 'urgent' : 'scheduled',
+        scheduledSlot: selectedSlot,
+        scheduledDate: scheduledDateVal,
+        price: priceVal
+      })
     });
-
-    if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-      const data = await res.json();
-      if (data.success && data.ticketId && modalTicket) {
-        modalTicket.textContent = data.ticketId;
-      }
-    }
   } catch (err) {}
 }
 

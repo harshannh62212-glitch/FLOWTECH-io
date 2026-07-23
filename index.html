@@ -4,8 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlowTech — Modern Smart Plumbing & 24/7 Instant Dispatch</title>
-  <meta name="description" content="Next-generation smart plumbing booking platform with real username and password authentication system connected to Supabase database.">
+  <meta name="description" content="Next-generation smart plumbing booking platform with real-time Supabase appointment database persistence and live dispatch center tracking.">
   <link rel="stylesheet" href="styles.css">
+  <!-- Supabase Web SDK CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -153,12 +155,12 @@
         <!-- LEFT: 3D Isometric Graphic & Telemetry -->
         <div class="hero-visual-wrapper">
           <div class="hero-badge-tag">
-            <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
-            <span>AUTHENTICATED CUSTOMER SESSION ACTIVE</span>
+            <i data-lucide="database" style="width: 14px; height: 14px;"></i>
+            <span>SUPABASE APPOINTMENT DATABASE ACTIVE</span>
           </div>
           <h1 class="hero-title">Precision Plumbing. Instant AI Dispatch.</h1>
           <p class="hero-desc">
-            Signed in as verified user. Track your active dispatch status live, save your primary address, and request instant technician dispatch from <strong>1231 Meadow Creek Dr</strong>.
+            Signed in as a verified customer. Track your active dispatch status live, save your primary address, and request instant technician dispatch from <strong>1231 Meadow Creek Dr</strong>.
           </p>
 
           <!-- 3D Isometric Image Display with Floating Glass Telemetry Overlay -->
@@ -179,11 +181,11 @@
             <!-- Live Telemetry Overlay Node 2 -->
             <div class="telemetry-node node-2">
               <div class="telemetry-icon" style="color: var(--success); background: rgba(16, 185, 129, 0.15);">
-                <i data-lucide="user-check" style="width: 18px; height: 18px;"></i>
+                <i data-lucide="database" style="width: 18px; height: 18px;"></i>
               </div>
               <div>
-                <div class="telemetry-label">USER ACCOUNT</div>
-                <div class="telemetry-val" style="color: #34d399;" id="heroUserStatus">SARAH_CONNOR</div>
+                <div class="telemetry-label">SUPABASE DATABASE</div>
+                <div class="telemetry-val" style="color: #34d399;" id="heroUserStatus">CONNECTED</div>
               </div>
             </div>
           </div>
@@ -460,7 +462,7 @@
           <i data-lucide="check" style="width: 28px; height: 28px;"></i>
         </div>
         <h3 style="font-size: 24px; font-weight: 800; color: #fff;">Technician Dispatched!</h3>
-        <p style="font-size: 13px; color: var(--text-secondary);">Ticket <span style="font-family: var(--font-mono); color: var(--cyan-neon);" id="ticketId">#FLW-92041</span> saved for <strong style="color: #fff;" id="modalCustomerName">sarah_connor</strong>.</p>
+        <p style="font-size: 13px; color: var(--text-secondary);">Ticket <span style="font-family: var(--font-mono); color: var(--cyan-neon);" id="ticketId">#FLW-92041</span> saved to Supabase DB for <strong style="color: #fff;" id="modalCustomerName">sarah_connor</strong>.</p>
       </div>
 
       <div style="background: rgba(6, 9, 19, 0.6); padding: 16px; border-radius: var(--border-radius-md); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 24px; font-size: 13px;">
@@ -473,7 +475,7 @@
           <span style="font-weight: 700; color: #fff;">1231 Meadow Creek Dr</span>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="color: var(--text-secondary);">Service:</span>
+          <span style="color: var(--text-secondary);">Service & Slot:</span>
           <span style="font-weight: 700; color: #fff;" id="modalServiceType">Emergency Pipe Leak Repair</span>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
@@ -502,7 +504,7 @@
             <div class="logo-text">FLOW<span>TECH</span></div>
           </div>
           <p style="font-size: 13px; color: var(--text-secondary); max-width: 320px;">
-            Central Dispatch Hub: 1231 Meadow Creek Dr. Username & Password Auth Active.
+            Central Dispatch Hub: 1231 Meadow Creek Dr. Supabase Database Instance Connected.
           </p>
         </div>
 
@@ -531,7 +533,7 @@
       </div>
 
       <div class="footer-bottom">
-        © 2026 FlowTech Inc. Username & Password Authentication System Verified.
+        © 2026 FlowTech Inc. Supabase Database Appointment Persistence Active.
       </div>
     </div>
   </footer>

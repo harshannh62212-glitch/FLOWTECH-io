@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlowTech — Operator Dispatch Console (Username Identity Engine)</title>
+  <title>FlowTech — Operator Dispatch Console (Supabase DB Engine)</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- Supabase Web SDK CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     .operator-header { padding: 120px 0 30px 0; }
@@ -57,6 +60,18 @@
       font-weight: 700;
       margin-top: 4px;
     }
+
+    .time-slot-pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid #6366f1;
+      color: #a5f3fc;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -67,11 +82,11 @@
   <div class="pin-lock-overlay" id="pinLockScreen">
     <div class="glass-panel pin-card">
       <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(0, 243, 255, 0.15); border: 2px solid var(--cyan-neon); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; color: var(--cyan-neon); box-shadow: 0 0 25px var(--cyan-glow);">
-        <i data-lucide="lock" style="width: 28px; height: 28px;"></i>
+        <i data-lucide="shield" style="width: 28px; height: 28px;"></i>
       </div>
 
       <h2 style="font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 8px;">Restricted Dispatch Console</h2>
-      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">Enter Operator PIN to view incoming customer calls & verified usernames.</p>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">Enter Operator PIN to view incoming customer appointments stored in Supabase DB.</p>
 
       <form onsubmit="verifyOperatorPin(event)">
         <div class="form-group">
@@ -99,7 +114,7 @@
 
       <div class="dispatch-badge">
         <div class="status-pulse"></div>
-        <span>OPERATOR CONSOLE (USERNAME ENGINE)</span>
+        <span>OPERATOR CONSOLE (SUPABASE ENGINE)</span>
         <span style="opacity: 0.5;">|</span>
         <span style="font-family: var(--font-mono); font-size: 11px; color: var(--cyan-neon);">Hub: 1231 Meadow Creek Dr</span>
       </div>
@@ -121,20 +136,20 @@
     <div class="container">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
         <div>
-          <div class="section-tag">SUPABASE REAL-TIME DISPATCH ENGINE</div>
-          <h1 style="font-size: 32px; font-weight: 900; color: #fff;">Customer Call Stream & User Accounts</h1>
-          <p style="font-size: 14px; color: var(--text-secondary);">Real-time stream linked to Supabase User Profiles: <span style="font-family: var(--font-mono); color: var(--cyan-neon);">aebntdjjniirnwthtwlx.supabase.co</span></p>
+          <div class="section-tag">SUPABASE REAL-TIME APPOINTMENT STREAM</div>
+          <h1 style="font-size: 32px; font-weight: 900; color: #fff;">Customer Appointments & Dispatch Queue</h1>
+          <p style="font-size: 14px; color: var(--text-secondary);">Direct Supabase PostgreSQL database reader: <span style="font-family: var(--font-mono); color: var(--cyan-neon);">aebntdjjniirnwthtwlx.supabase.co</span></p>
         </div>
 
         <button class="btn-back" style="display: flex; align-items: center; gap: 8px;" onclick="loadIncomingCalls()">
-          <i data-lucide="refresh-cw" style="width: 14px;"></i> Refresh Stream
+          <i data-lucide="refresh-cw" style="width: 14px;"></i> Refresh DB Stream
         </button>
       </div>
 
       <!-- METRICS BAR -->
       <div class="metric-grid">
         <div class="metric-card">
-          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">ACTIVE INCOMING CALLS</div>
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">ACTIVE APPOINTMENTS</div>
           <div class="metric-val" id="metricTotalCalls">3</div>
         </div>
 
@@ -144,8 +159,8 @@
         </div>
 
         <div class="metric-card">
-          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">VERIFIED USERNAMES</div>
-          <div class="metric-val" style="color: #34d399;" id="metricVerifiedUsers">100%</div>
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">DATABASE INSTANCE</div>
+          <div class="metric-val" style="color: #34d399; font-size: 18px;">Supabase DB</div>
         </div>
 
         <div class="metric-card">
@@ -154,11 +169,11 @@
         </div>
       </div>
 
-      <!-- INCOMING CALLS TABLE WITH USERNAME IDENTITY -->
+      <!-- INCOMING APPOINTMENTS TABLE -->
       <div class="glass-panel" style="padding: 24px; margin-bottom: 40px;" id="calls">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-          <h3 style="font-size: 18px; font-weight: 800; color: #fff;">Incoming Tickets & Authenticated Usernames</h3>
-          <div style="font-size: 12px; color: var(--text-muted);">Synced with Supabase Username Database</div>
+          <h3 style="font-size: 18px; font-weight: 800; color: #fff;">Stored Appointments & Scheduled Time Slots</h3>
+          <div style="font-size: 12px; color: var(--text-muted);">Reading `bookings` table from Supabase DB</div>
         </div>
 
         <div style="overflow-x: auto;">
@@ -166,18 +181,18 @@
             <thead>
               <tr>
                 <th>Ticket ID</th>
-                <th>Username & Customer Details</th>
+                <th>Customer Identity</th>
+                <th>Service & Scheduled Slot</th>
                 <th>Destination Address</th>
-                <th>Issue / AI Diagnosis</th>
-                <th>ETA Breakdown</th>
+                <th>Hub ETA Breakdown</th>
                 <th>Price Quote</th>
                 <th>Assigned Tech</th>
                 <th>Status</th>
-                <th>Action</th>
+                <th>Update Status</th>
               </tr>
             </thead>
             <tbody id="ticketsTableBody">
-              <!-- Dynamically populated -->
+              <!-- Dynamically populated from Supabase -->
             </tbody>
           </table>
         </div>
@@ -188,10 +203,22 @@
 
   <script>
     const API_BASE = window.location.origin;
+    const SUPABASE_URL = 'https://aebntdjjniirnwthtwlx.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlYm50ZGpqbmlpcm53dGh0d2x4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NzIwNTYsImV4cCI6MjA5ODQ0ODA1Nn0.la5aH5b2Tb5cj5yfVEWHhPKU4_ieCWydEPWH8V81eIg';
+    let supabaseClient = null;
 
     document.addEventListener('DOMContentLoaded', () => {
+      initSupabaseClient();
       checkAuthSession();
     });
+
+    function initSupabaseClient() {
+      if (window.supabase) {
+        try {
+          supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {}
+      }
+    }
 
     function checkAuthSession() {
       const isAuth = sessionStorage.getItem('flowtech_operator_auth');
@@ -200,7 +227,7 @@
       if (isAuth === 'true') {
         if (lockScreen) lockScreen.style.display = 'none';
         loadIncomingCalls();
-        setInterval(loadIncomingCalls, 5000);
+        setInterval(loadIncomingCalls, 3000);
       } else {
         if (lockScreen) lockScreen.style.display = 'flex';
       }
@@ -228,18 +255,35 @@
     }
 
     async function loadIncomingCalls() {
-      try {
-        const res = await fetch(`${API_BASE}/api/incoming-calls`);
-        if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-          const data = await res.json();
-          if (data.success && data.tickets) {
-            renderTicketsTable(data.tickets);
-            updateMetrics(data.tickets);
+      let tickets = [];
+
+      // 1. Query Supabase DB directly
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient
+            .from('bookings')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (!error && data && data.length > 0) {
+            tickets = data;
           }
-        }
-      } catch (err) {
-        console.warn('Error loading dispatch stream:', err);
+        } catch (e) {}
       }
+
+      // 2. Express Server Standby Fallback
+      if (tickets.length === 0) {
+        try {
+          const res = await fetch(`${API_BASE}/api/incoming-calls`);
+          if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+            const data = await res.json();
+            if (data.success && data.tickets) tickets = data.tickets;
+          }
+        } catch (err) {}
+      }
+
+      renderTicketsTable(tickets);
+      updateMetrics(tickets);
     }
 
     function renderTicketsTable(tickets) {
@@ -247,7 +291,7 @@
       if (!tbody) return;
 
       if (tickets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">No active calls in queue</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding: 30px;">No appointments in database queue</td></tr>';
         return;
       }
 
@@ -263,6 +307,9 @@
         const customerEmail = ticket.customer_email || 'sarah@skynet-defense.com';
         const customerPhone = ticket.contact_phone || '(555) 839-2041';
 
+        const slot = ticket.scheduled_slot || 'NOW (15 Min)';
+        const date = ticket.scheduled_date || new Date().toISOString().split('T')[0];
+
         html += `
           <tr>
             <td style="font-family: var(--font-mono); font-weight: 700; color: var(--cyan-neon);">${ticket.ticket_id}</td>
@@ -275,9 +322,12 @@
               </div>
             </td>
             <td>
+              <div style="font-weight: 700; color: #a5f3fc;">${escapeHtml(ticket.service_type || 'Emergency Plumbing')}</div>
+              <div class="time-slot-pill">📅 ${escapeHtml(date)} | ⏰ ${escapeHtml(slot)}</div>
+            </td>
+            <td>
               <div style="font-weight: 600; color: #fff; max-width: 180px;">${escapeHtml(ticket.service_address || '1231 Meadow Creek Dr Area')}</div>
             </td>
-            <td style="font-weight: 600; color: #a5f3fc;">${escapeHtml(ticket.service_type || 'Emergency Plumbing')}</td>
             <td style="font-family: var(--font-mono); color: var(--cyan-neon);">${total} Mins (${prep}m prep + ${drive}m drive)</td>
             <td style="font-family: var(--font-mono); font-weight: 800; color: #fff;">$${ticket.estimated_price || 149}</td>
             <td>${escapeHtml(ticket.technician_name || 'Alex Martinez')}</td>
@@ -304,14 +354,23 @@
     }
 
     async function updateTicketStatus(ticketId, newStatus) {
+      // 1. Direct Supabase DB update
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('bookings').update({ status: newStatus }).eq('ticket_id', ticketId);
+        } catch (e) {}
+      }
+
+      // 2. Express Server update backup
       try {
         await fetch(`${API_BASE}/api/update-dispatch`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ticketId: ticketId, status: newStatus })
         });
-        loadIncomingCalls();
       } catch (err) {}
+
+      loadIncomingCalls();
     }
 
     async function simulateIncomingCall() {

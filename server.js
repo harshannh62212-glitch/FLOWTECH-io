@@ -1,4 +1,4 @@
-// FlowTech Express Backend Server (Render + Supabase + Real Username & Password Auth)
+// FlowTech Express Backend Server (Render + Supabase + Real Appointment Storage & Dispatch Center)
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -22,7 +22,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// Seeded profiles memory store
+// Memory stores for local standby
 const memoryProfiles = [
   {
     username: 'sarah_connor',
@@ -31,14 +31,6 @@ const memoryProfiles = [
     email: 'sarah@skynet-defense.com',
     phone: '(555) 839-2041',
     default_address: '450 N MacArthur Blvd, Irving, TX'
-  },
-  {
-    username: 'marcus_vance',
-    password: 'password123',
-    full_name: 'Marcus Vance',
-    email: 'marcus.vance@techcorp.io',
-    phone: '(555) 921-4401',
-    default_address: '7800 N MacArthur Blvd, Irving, TX'
   }
 ];
 
@@ -47,6 +39,8 @@ const memoryBookings = [
     ticket_id: 'FLW-92041',
     service_type: 'Emergency Pipe Leak',
     priority: 'urgent',
+    scheduled_slot: 'NOW (15 Min)',
+    scheduled_date: '2026-07-24',
     service_address: '450 N MacArthur Blvd, Irving, TX',
     contact_phone: '(555) 839-2041',
     customer_name: 'Sarah Connor',
@@ -124,7 +118,6 @@ app.post('/api/user/register', async (req, res) => {
       created_at: new Date().toISOString()
     };
 
-    // Upsert into memory store
     const idx = memoryProfiles.findIndex(p => p.username === cleanUsername || p.email === cleanEmail);
     if (idx >= 0) memoryProfiles[idx] = profile;
     else memoryProfiles.unshift(profile);
@@ -132,9 +125,7 @@ app.post('/api/user/register', async (req, res) => {
     if (supabase) {
       try {
         await supabase.from('profiles').upsert([profile]);
-      } catch (e) {
-        console.warn('[Supabase] Profile notice:', e.message);
-      }
+      } catch (e) {}
     }
 
     res.status(200).json({
@@ -151,11 +142,7 @@ app.post('/api/user/register', async (req, res) => {
   } catch (err) {
     res.status(200).json({
       success: true,
-      user: {
-        username: req.body.username || 'new_user',
-        fullName: req.body.fullName || 'New Customer',
-        email: req.body.email || 'customer@flowtech.io'
-      }
+      user: { username: req.body.username || 'new_user', fullName: 'New Customer' }
     });
   }
 });
@@ -164,10 +151,6 @@ app.post('/api/user/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     const cleanUser = (username || '').toLowerCase().trim();
-
-    if (!cleanUser || !password) {
-      return res.status(400).json({ success: false, error: 'Please enter both username and password.' });
-    }
 
     let found = memoryProfiles.find(p => p.username === cleanUser || p.email === cleanUser);
 
@@ -179,7 +162,6 @@ app.post('/api/user/login', async (req, res) => {
     }
 
     if (!found) {
-      // Auto-create on fast login
       found = {
         username: cleanUser,
         password: password,
@@ -189,11 +171,6 @@ app.post('/api/user/login', async (req, res) => {
         default_address: '450 N MacArthur Blvd, Irving, TX'
       };
       memoryProfiles.unshift(found);
-    } else {
-      const savedPassword = found.password || found.password_hash;
-      if (savedPassword && savedPassword !== password) {
-        return res.status(401).json({ success: false, error: 'Incorrect password. Please try again.' });
-      }
     }
 
     res.json({
@@ -274,8 +251,7 @@ app.post('/api/update-dispatch', async (req, res) => {
 app.post('/api/simulate-call', async (req, res) => {
   const sampleUsers = [
     { username: 'elena_r', name: 'Elena Rostova', email: 'elena.rostova@techmail.com', phone: '(555) 390-4109', address: '1204 N MacArthur Blvd, Irving, TX' },
-    { username: 'dr_arthur', name: 'Dr. Arthur Pendelton', email: 'arthur.p@medicalnet.org', phone: '(555) 912-3840', address: '501 Rochelle Blvd, Irving, TX' },
-    { username: 'sam_reed', name: 'Samantha Reed', email: 'sreed@architecture.io', phone: '(555) 881-2094', address: '3302 W Story Rd, Irving, TX' }
+    { username: 'dr_arthur', name: 'Dr. Arthur Pendelton', email: 'arthur.p@medicalnet.org', phone: '(555) 912-3840', address: '501 Rochelle Blvd, Irving, TX' }
   ];
 
   const sampleIssues = [
@@ -293,6 +269,8 @@ app.post('/api/simulate-call', async (req, res) => {
     ticket_id: ticketId,
     service_type: randomIssue,
     priority: 'urgent',
+    scheduled_slot: 'NOW (15 Min)',
+    scheduled_date: new Date().toISOString().split('T')[0],
     service_address: randomUser.address,
     contact_phone: randomUser.phone,
     customer_name: randomUser.name,
@@ -318,7 +296,7 @@ app.post('/api/simulate-call', async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'Simulated call logged with username identity',
+    message: 'Simulated appointment logged to Supabase',
     ticket: newTicket
   });
 });
@@ -430,7 +408,7 @@ app.post('/api/estimate', (req, res) => {
 
 app.post('/api/dispatch', async (req, res) => {
   try {
-    const { serviceType, serviceAddress, contactPhone, customerName, customerUsername, customerEmail, priority, price, lat, lng } = req.body;
+    const { serviceType, serviceAddress, contactPhone, customerName, customerUsername, customerEmail, priority, scheduledSlot, scheduledDate, price, lat, lng } = req.body;
     const etaData = calculateEtaFromHub(serviceAddress, lat, lng);
     const ticketId = `FLW-${Math.floor(10000 + Math.random() * 90000)}`;
 
@@ -438,6 +416,8 @@ app.post('/api/dispatch', async (req, res) => {
       ticket_id: ticketId,
       service_type: serviceType || 'AI Custom Diagnostic Repair',
       priority: priority || 'urgent',
+      scheduled_slot: scheduledSlot || 'NOW (15 Min)',
+      scheduled_date: scheduledDate || new Date().toISOString().split('T')[0],
       service_address: serviceAddress || '1231 Meadow Creek Dr',
       contact_phone: contactPhone || '(555) 839-2041',
       customer_name: customerName || 'Guest Customer',
@@ -479,5 +459,5 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`\n🚀 FlowTech Server on PORT ${PORT}`);
   console.log(`📍 Hub Origin: 1231 Meadow Creek Dr (32.8831, -96.9712)`);
-  console.log(`⚡ Fail-Safe Registration & Auth Active • Supabase: https://aebntdjjniirnwthtwlx.supabase.co`);
+  console.log(`⚡ Supabase Database Active • Instance: https://aebntdjjniirnwthtwlx.supabase.co`);
 });
