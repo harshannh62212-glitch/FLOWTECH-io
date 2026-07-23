@@ -1,4 +1,4 @@
-// FlowTech Interactive Engine: AI Custom Issue Quote Generator & Geolocation Engine
+// FlowTech Interactive Engine: Bulletproof Booking & Dispatch System
 
 let currentStep = 1;
 let selectedService = 'Emergency Pipe Leak';
@@ -19,7 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModalBtn = document.getElementById('closeModalBtn');
   const modalBackdrop = document.getElementById('modalBackdrop');
 
-  if (openModalBtn) openModalBtn.addEventListener('click', openModal);
+  if (openModalBtn) {
+    openModalBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      scrollToBooking();
+    });
+  }
+
   if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
   if (modalBackdrop) {
     modalBackdrop.addEventListener('click', (e) => {
@@ -35,6 +41,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// Scroll to Booking Card
+function scrollToBooking() {
+  const bookingCard = document.getElementById('booking');
+  if (bookingCard) {
+    bookingCard.scrollIntoView({ behavior: 'smooth' });
+    goToStep(1);
+  } else {
+    openModal();
+  }
+}
 
 async function fetchBackendHealth() {
   try {
@@ -159,9 +176,7 @@ async function generateStandaloneAiQuote() {
 function bookWithAiQuote(diagnosis, price) {
   selectedService = `AI Quote: ${diagnosis}`;
   basePrice = price;
-  goToStep(1);
-  const heroSection = document.getElementById('hero');
-  if (heroSection) heroSection.scrollIntoView({ behavior: 'smooth' });
+  scrollToBooking();
 }
 
 // -------------------------------------------------------------
@@ -248,7 +263,7 @@ function selectSuggestion(addressText, lat, lng) {
 }
 
 function escapeHtml(str) {
-  return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
 // -------------------------------------------------------------
@@ -343,35 +358,67 @@ async function updateEstimateBackend() {
 
     const data = await res.json();
     if (data.success) {
-      document.getElementById('distReadout').textContent = `${data.distanceMiles} Miles from Hub`;
-      document.getElementById('prepTimeVal').textContent = `${data.prepTimeMins} Mins`;
-      document.getElementById('driveTimeVal').textContent = `${data.driveTimeMins} Mins`;
-      document.getElementById('totalEtaVal').textContent = `${data.totalEtaMins} Mins`;
-      document.getElementById('computedEstimate').textContent = `$${data.estimatedPrice}.00`;
+      const distElem = document.getElementById('distReadout');
+      const prepElem = document.getElementById('prepTimeVal');
+      const driveElem = document.getElementById('driveTimeVal');
+      const totalEtaElem = document.getElementById('totalEtaVal');
+      const priceElem = document.getElementById('computedEstimate');
+
+      if (distElem) distElem.textContent = `${data.distanceMiles} Miles from Hub`;
+      if (prepElem) prepElem.textContent = `${data.prepTimeMins} Mins`;
+      if (driveElem) driveElem.textContent = `${data.driveTimeMins} Mins`;
+      if (totalEtaElem) totalEtaElem.textContent = `${data.totalEtaMins} Mins`;
+      if (priceElem) priceElem.textContent = `$${data.estimatedPrice}.00`;
       return data;
     }
   } catch (err) {
     const finalPrice = isUrgent ? basePrice : Math.round(basePrice * 0.9);
-    document.getElementById('computedEstimate').textContent = `$${finalPrice}.00`;
+    const priceElem = document.getElementById('computedEstimate');
+    if (priceElem) priceElem.textContent = `$${finalPrice}.00`;
   }
 }
 
+// BULLETPROOF SUBMIT BOOKING DISPATCH
 async function submitBooking() {
+  console.log('[Dispatch] Submitting booking request...');
+
   const addressInput = document.getElementById('serviceAddress');
   const phoneInput = document.getElementById('contactPhone');
-  const address = addressInput ? addressInput.value : '450 MacArthur Blvd, Irving, TX';
-  const phone = phoneInput ? phoneInput.value : '(555) 839-2041';
-  const priceText = document.getElementById('computedEstimate').textContent;
-  const totalEtaText = document.getElementById('totalEtaVal').textContent;
-  const prepTimeText = document.getElementById('prepTimeVal').textContent;
-  const driveTimeText = document.getElementById('driveTimeVal').textContent;
+  const address = addressInput && addressInput.value ? addressInput.value : '450 MacArthur Blvd, Irving, TX';
+  const phone = phoneInput && phoneInput.value ? phoneInput.value : '(555) 839-2041';
+  
+  const priceElem = document.getElementById('computedEstimate');
+  const priceText = priceElem ? priceElem.textContent : '$149.00';
+  const priceVal = parseFloat(priceText.replace(/[^0-9.]/g, '')) || 149;
+
+  const totalEtaElem = document.getElementById('totalEtaVal');
+  const totalEtaText = totalEtaElem ? totalEtaElem.textContent : '12 Mins';
+  const prepTimeElem = document.getElementById('prepTimeVal');
+  const prepTimeText = prepTimeElem ? prepTimeElem.textContent : '4 Mins';
+  const driveTimeElem = document.getElementById('driveTimeVal');
+  const driveTimeText = driveTimeElem ? driveTimeElem.textContent : '8 Mins';
+
+  const fallbackTicketId = `FLW-${Math.floor(10000 + Math.random() * 90000)}`;
+
+  const modalTicket = document.getElementById('ticketId');
+  const modalService = document.getElementById('modalServiceType');
+  const modalPrice = document.getElementById('modalPrice');
+  const modalEta = document.getElementById('modalEta');
+
+  if (modalTicket) modalTicket.textContent = fallbackTicketId;
+  if (modalService) modalService.textContent = selectedService || 'Emergency Pipe Leak';
+  if (modalPrice) modalPrice.textContent = `$${priceVal}.00`;
+  if (modalEta) modalEta.textContent = `${totalEtaText} (${prepTimeText} prep + ${driveTimeText} drive)`;
+
+  // Always open modal popup immediately
+  openModal();
 
   const payload = {
-    serviceType: selectedService,
+    serviceType: selectedService || 'Emergency Pipe Leak',
     serviceAddress: address,
     contactPhone: phone,
     priority: isUrgent ? 'urgent' : 'scheduled',
-    price: parseFloat(priceText.replace('$', ''))
+    price: priceVal
   };
 
   if (currentGpsCoords) {
@@ -387,19 +434,11 @@ async function submitBooking() {
     });
 
     const data = await res.json();
-    if (data.success) {
-      document.getElementById('ticketId').textContent = data.ticketId;
-      document.getElementById('modalServiceType').textContent = selectedService;
-      document.getElementById('modalPrice').textContent = priceText;
-      document.getElementById('modalEta').textContent = `${totalEtaText} (${prepTimeText} prep + ${driveTimeText} drive)`;
-      openModal();
+    if (data.success && data.ticketId && modalTicket) {
+      modalTicket.textContent = data.ticketId;
     }
   } catch (err) {
-    document.getElementById('ticketId').textContent = `#FLW-${Math.floor(10000 + Math.random() * 90000)}`;
-    document.getElementById('modalServiceType').textContent = selectedService;
-    document.getElementById('modalPrice').textContent = priceText;
-    document.getElementById('modalEta').textContent = `${totalEtaText} (${prepTimeText} prep + ${driveTimeText} drive)`;
-    openModal();
+    console.warn('[Dispatch] Local ticket issued:', fallbackTicketId);
   }
 }
 
@@ -414,9 +453,7 @@ function closeModal() {
 }
 
 function bookForDiagnostic() {
-  goToStep(1);
-  const heroSection = document.getElementById('hero');
-  if (heroSection) heroSection.scrollIntoView({ behavior: 'smooth' });
+  scrollToBooking();
 }
 
 function startTelemetryTicker() {
