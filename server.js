@@ -1,4 +1,4 @@
-// FlowTech Express Backend Server (Render + Supabase + Live Dispatch Console)
+// FlowTech Express Backend Server (Render + Supabase + User Auth + Operator Console)
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -22,7 +22,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// Local Standby Store (seeded with initial active calls for instant visualization)
+// Memory stores for local standby
+const memoryProfiles = [
+  {
+    full_name: 'Sarah Connor',
+    email: 'sarah@skynet-defense.com',
+    phone: '(555) 839-2041',
+    default_address: '450 N MacArthur Blvd, Irving, TX'
+  }
+];
+
 const memoryBookings = [
   {
     ticket_id: 'FLW-92041',
@@ -30,6 +39,8 @@ const memoryBookings = [
     priority: 'urgent',
     service_address: '450 N MacArthur Blvd, Irving, TX',
     contact_phone: '(555) 839-2041',
+    customer_name: 'Sarah Connor',
+    customer_email: 'sarah@skynet-defense.com',
     dispatch_origin: '1231 Meadow Creek Dr',
     prep_time_mins: 4,
     drive_time_mins: 8,
@@ -45,6 +56,8 @@ const memoryBookings = [
     priority: 'urgent',
     service_address: '7800 N MacArthur Blvd, Irving, TX',
     contact_phone: '(555) 921-4401',
+    customer_name: 'Marcus Vance',
+    customer_email: 'marcus.vance@techcorp.io',
     dispatch_origin: '1231 Meadow Creek Dr',
     prep_time_mins: 4,
     drive_time_mins: 14,
@@ -53,21 +66,6 @@ const memoryBookings = [
     status: 'en_route',
     technician_name: 'David Kim',
     created_at: new Date(Date.now() - 15 * 60000).toISOString()
-  },
-  {
-    ticket_id: 'FLW-71094',
-    service_type: 'Ultrasonic Drain Clearing',
-    priority: 'scheduled',
-    service_address: '2200 W Airport Fwy, Irving, TX',
-    contact_phone: '(555) 302-8819',
-    dispatch_origin: '1231 Meadow Creek Dr',
-    prep_time_mins: 4,
-    drive_time_mins: 10,
-    total_eta_mins: 14,
-    estimated_price: 129.00,
-    status: 'completed',
-    technician_name: 'Sarah Jenkins',
-    created_at: new Date(Date.now() - 45 * 60000).toISOString()
   }
 ];
 
@@ -113,10 +111,78 @@ function calculateEtaFromHub(destinationAddress, userLat, userLng) {
 }
 
 // -------------------------------------------------------------
-// LIVE OPERATOR DISPATCH & INCOMING CALLS API ENDPOINTS
+// USER AUTHENTICATION API ENDPOINTS
 // -------------------------------------------------------------
+app.post('/api/user/register', async (req, res) => {
+  try {
+    const { fullName, email, phone, address } = req.body;
+    if (!email || !fullName) {
+      return res.status(400).json({ success: false, error: 'Full name and email are required.' });
+    }
 
-// 1. Get All Incoming Calls & Booking Tickets
+    const profile = {
+      full_name: fullName,
+      email: email.toLowerCase().trim(),
+      phone: phone || '(555) 000-0000',
+      default_address: address || '1231 Meadow Creek Dr Area',
+      created_at: new Date().toISOString()
+    };
+
+    memoryProfiles.unshift(profile);
+
+    if (supabase) {
+      try {
+        await supabase.from('profiles').insert([profile]);
+      } catch (e) {}
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully',
+      user: profile
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/user/login', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const cleanEmail = (email || '').toLowerCase().trim();
+
+    let found = memoryProfiles.find(p => p.email === cleanEmail);
+
+    if (!found && supabase) {
+      try {
+        const { data } = await supabase.from('profiles').select('*').eq('email', cleanEmail).limit(1);
+        if (data && data.length > 0) found = data[0];
+      } catch (e) {}
+    }
+
+    if (!found) {
+      // Auto-create on fast sign-in for seamless experience
+      found = {
+        full_name: cleanEmail.split('@')[0].toUpperCase(),
+        email: cleanEmail,
+        phone: '(555) 839-2041',
+        default_address: '450 N MacArthur Blvd, Irving, TX'
+      };
+      memoryProfiles.unshift(found);
+    }
+
+    res.json({
+      success: true,
+      user: found
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// OPERATOR DISPATCH & INCOMING CALLS API ENDPOINTS
+// -------------------------------------------------------------
 app.get('/api/incoming-calls', async (req, res) => {
   try {
     let tickets = memoryBookings;
@@ -143,14 +209,11 @@ app.get('/api/incoming-calls', async (req, res) => {
   }
 });
 
-// 2. Update Dispatch Status & Reassign Tech
 app.post('/api/update-dispatch', async (req, res) => {
   try {
     const { ticketId, status, technicianName } = req.body;
-
     let updated = null;
 
-    // Update memory store
     const item = memoryBookings.find(b => b.ticket_id === ticketId);
     if (item) {
       if (status) item.status = status;
@@ -158,58 +221,48 @@ app.post('/api/update-dispatch', async (req, res) => {
       updated = item;
     }
 
-    // Update Supabase DB
     if (supabase && ticketId) {
       const updateData = {};
       if (status) updateData.status = status;
-      const { data, error } = await supabase
-        .from('bookings')
-        .update(updateData)
-        .eq('ticket_id', ticketId)
-        .select();
-
-      if (!error && data && data.length > 0) {
-        updated = data[0];
-      }
+      const { data } = await supabase.from('bookings').update(updateData).eq('ticket_id', ticketId).select();
+      if (data && data.length > 0) updated = data[0];
     }
 
     res.json({
       success: true,
-      message: `Ticket ${ticketId} updated to ${status || 'modified'}`,
-      updatedTicket: updated || { ticket_id: ticketId, status: status, technician_name: technicianName }
+      updatedTicket: updated || { ticket_id: ticketId, status: status }
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// 3. Simulate Incoming Call Generator for Operator Testing
 app.post('/api/simulate-call', async (req, res) => {
+  const sampleUsers = [
+    { name: 'Elena Rostova', email: 'elena.rostova@techmail.com', phone: '(555) 390-4109', address: '1204 N MacArthur Blvd, Irving, TX' },
+    { name: 'Dr. Arthur Pendelton', email: 'arthur.p@medicalnet.org', phone: '(555) 912-3840', address: '501 Rochelle Blvd, Irving, TX' },
+    { name: 'Samantha Reed', email: 'sreed@architecture.io', phone: '(555) 881-2094', address: '3302 W Story Rd, Irving, TX' }
+  ];
+
   const sampleIssues = [
     'Emergency Pipe Leak - Kitchen Water Line',
     'Main Line Drain Backup & Overflow',
-    'Smart Water Heater Heating Element Failure',
-    'High Pressure Burst Risk behind Drywall'
+    'Smart Water Heater Heating Element Failure'
   ];
 
-  const sampleAddresses = [
-    '1204 N MacArthur Blvd, Irving, TX',
-    '501 Rochelle Blvd, Irving, TX',
-    '3302 W Story Rd, Irving, TX',
-    '1800 O Connor Rd, Irving, TX'
-  ];
-
+  const randomUser = sampleUsers[Math.floor(Math.random() * sampleUsers.length)];
   const randomIssue = sampleIssues[Math.floor(Math.random() * sampleIssues.length)];
-  const randomAddress = sampleAddresses[Math.floor(Math.random() * sampleAddresses.length)];
   const ticketId = `FLW-${Math.floor(10000 + Math.random() * 90000)}`;
-  const etaData = calculateEtaFromHub(randomAddress);
+  const etaData = calculateEtaFromHub(randomUser.address);
 
   const newTicket = {
     ticket_id: ticketId,
     service_type: randomIssue,
     priority: 'urgent',
-    service_address: randomAddress,
-    contact_phone: `(555) ${Math.floor(100 + Math.random() * 900)}-${Math.floor(1000 + Math.random() * 9000)}`,
+    service_address: randomUser.address,
+    contact_phone: randomUser.phone,
+    customer_name: randomUser.name,
+    customer_email: randomUser.email,
     dispatch_origin: DISPATCH_HUB.address,
     prep_time_mins: 4,
     drive_time_mins: etaData.driveTimeMins,
@@ -230,12 +283,11 @@ app.post('/api/simulate-call', async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'Simulated incoming call logged',
+    message: 'Simulated incoming call logged with customer identity',
     ticket: newTicket
   });
 });
 
-// 4. AI Quote API
 app.post('/api/ai-quote', (req, res) => {
   const { description, isUrgent, lat, lng } = req.body;
   const text = (description || '').toLowerCase().trim();
@@ -343,7 +395,7 @@ app.post('/api/estimate', (req, res) => {
 
 app.post('/api/dispatch', async (req, res) => {
   try {
-    const { serviceType, serviceAddress, contactPhone, priority, price, lat, lng } = req.body;
+    const { serviceType, serviceAddress, contactPhone, customerName, customerEmail, priority, price, lat, lng } = req.body;
     const etaData = calculateEtaFromHub(serviceAddress, lat, lng);
     const ticketId = `FLW-${Math.floor(10000 + Math.random() * 90000)}`;
 
@@ -353,6 +405,8 @@ app.post('/api/dispatch', async (req, res) => {
       priority: priority || 'urgent',
       service_address: serviceAddress || '1231 Meadow Creek Dr',
       contact_phone: contactPhone || '(555) 839-2041',
+      customer_name: customerName || 'Guest Customer',
+      customer_email: customerEmail || 'guest@flowtech.io',
       dispatch_origin: DISPATCH_HUB.address,
       prep_time_mins: 4,
       drive_time_mins: etaData.driveTimeMins,

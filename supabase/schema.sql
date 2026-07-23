@@ -1,54 +1,42 @@
--- FlowTech Supabase PostgreSQL Database Schema
--- Dispatch Hub Origin: 1231 Meadow Creek Dr
+-- FlowTech Supabase Schema: Customer Profiles & Dispatch Bookings
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- 1. TECHNICIANS TABLE
-CREATE TABLE IF NOT EXISTS technicians (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(100) NOT NULL,
-    badge_number VARCHAR(20) UNIQUE NOT NULL,
-    status VARCHAR(30) DEFAULT 'available', -- 'available', 'en_route', 'on_site', 'off_duty'
-    rating NUMERIC(3,2) DEFAULT 4.95,
-    current_lat NUMERIC(10,6) DEFAULT 32.8831, -- Coordinates near Meadow Creek Dr
-    current_lng NUMERIC(10,6) DEFAULT -96.9712,
-    base_location VARCHAR(255) DEFAULT '1231 Meadow Creek Dr',
-    prep_time_minutes INT DEFAULT 4,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID,
+  full_name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  phone TEXT,
+  default_address TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. BOOKINGS TABLE
-CREATE TABLE IF NOT EXISTS bookings (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    ticket_id VARCHAR(20) UNIQUE NOT NULL,
-    service_type VARCHAR(100) NOT NULL,
-    priority VARCHAR(20) DEFAULT 'urgent',
-    service_address VARCHAR(255) NOT NULL,
-    contact_phone VARCHAR(30) NOT NULL,
-    dispatch_origin VARCHAR(255) DEFAULT '1231 Meadow Creek Dr',
-    prep_time_mins INT DEFAULT 4,
-    drive_time_mins INT NOT NULL,
-    total_eta_mins INT NOT NULL,
-    estimated_price NUMERIC(10,2) NOT NULL,
-    status VARCHAR(30) DEFAULT 'dispatched',
-    technician_id UUID REFERENCES technicians(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.bookings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ticket_id TEXT UNIQUE NOT NULL,
+  service_type TEXT NOT NULL,
+  priority TEXT DEFAULT 'urgent',
+  service_address TEXT NOT NULL,
+  contact_phone TEXT NOT NULL,
+  customer_name TEXT DEFAULT 'Guest Customer',
+  customer_email TEXT DEFAULT 'guest@flowtech.io',
+  user_id UUID,
+  dispatch_origin TEXT DEFAULT '1231 Meadow Creek Dr',
+  prep_time_mins INTEGER DEFAULT 4,
+  drive_time_mins INTEGER DEFAULT 10,
+  total_eta_mins INTEGER DEFAULT 14,
+  estimated_price NUMERIC(10,2) NOT NULL,
+  status TEXT DEFAULT 'dispatched',
+  technician_name TEXT DEFAULT 'Alex Martinez',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. DISPATCH LOGS TABLE
-CREATE TABLE IF NOT EXISTS dispatch_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    booking_id UUID REFERENCES bookings(id),
-    log_message TEXT NOT NULL,
-    telemetry_data JSONB DEFAULT '{}'::jsonb,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- RLS Security Policies
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 
--- Seed Initial Technicians located at/near 1231 Meadow Creek Dr Hub
-INSERT INTO technicians (name, badge_number, status, rating, current_lat, current_lng, base_location, prep_time_minutes)
-VALUES 
-    ('Alex Martinez', 'FLW-4092', 'en_route', 4.98, 32.8850, -96.9730, '1231 Meadow Creek Dr', 4),
-    ('David Kim', 'FLW-3108', 'available', 4.92, 32.8810, -96.9680, '1231 Meadow Creek Dr', 5),
-    ('Sarah Jenkins', 'FLW-5501', 'available', 4.96, 32.8890, -96.9750, '1231 Meadow Creek Dr', 3)
-ON CONFLICT (badge_number) DO NOTHING;
+CREATE POLICY "Allow public select on bookings" ON public.bookings FOR SELECT USING (true);
+CREATE POLICY "Allow public insert on bookings" ON public.bookings FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update on bookings" ON public.bookings FOR UPDATE USING (true);
+
+CREATE POLICY "Allow public select on profiles" ON public.profiles FOR SELECT USING (true);
+CREATE POLICY "Allow public insert on profiles" ON public.profiles FOR INSERT WITH CHECK (true);

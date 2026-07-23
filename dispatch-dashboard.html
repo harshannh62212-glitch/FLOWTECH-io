@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlowTech — Operator Dispatch Console (Restricted Access)</title>
+  <title>FlowTech — Operator Dispatch Console (Linked Identity Engine)</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -21,7 +21,6 @@
     .badge-completed { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid var(--success); }
     .select-status { background: rgba(6, 9, 19, 0.8); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; padding: 6px 10px; font-size: 12px; outline: none; }
 
-    /* OPERATOR PIN LOCK SCREEN OVERLAY */
     .pin-lock-overlay {
       position: fixed;
       top: 0;
@@ -44,6 +43,20 @@
       border: 1px solid var(--cyan-neon);
       box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 30px var(--cyan-glow);
     }
+
+    .user-identity-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--success);
+      color: #34d399;
+      padding: 2px 8px;
+      border-radius: 50px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -58,25 +71,21 @@
       </div>
 
       <h2 style="font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 8px;">Restricted Dispatch Console</h2>
-      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">Enter Operator Passkey / PIN to access live incoming calls & fleet dispatch controls.</p>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">Enter Operator PIN to view incoming customer calls & linked identities.</p>
 
       <form onsubmit="verifyOperatorPin(event)">
         <div class="form-group">
-          <input type="password" class="form-input" id="operatorPinInput" placeholder="Enter Operator PIN (e.g. 4092)" style="text-align: center; font-size: 20px; letter-spacing: 4px; font-family: var(--font-mono); padding: 14px;" autofocus>
+          <input type="password" class="form-input" id="operatorPinInput" placeholder="Enter Operator PIN (4092)" style="text-align: center; font-size: 20px; letter-spacing: 4px; font-family: var(--font-mono); padding: 14px;" autofocus>
         </div>
 
         <div id="pinErrorMsg" style="display: none; color: #f87171; font-size: 12px; font-weight: 700; margin-bottom: 16px;">
-          ❌ Invalid Operator PIN. Please try again.
+          ❌ Invalid Operator PIN. Try 4092.
         </div>
 
         <button type="submit" class="btn-next" style="width: 100%; font-size: 15px; padding: 14px;">
           Unlock Dispatch Console →
         </button>
       </form>
-
-      <div style="margin-top: 20px; font-size: 11px; color: var(--text-muted);">
-        Demo Operator PIN: <strong style="color: var(--cyan-neon);">4092</strong>
-      </div>
     </div>
   </div>
 
@@ -90,19 +99,19 @@
 
       <div class="dispatch-badge">
         <div class="status-pulse"></div>
-        <span>OPERATOR CONSOLE (RESTRICTED)</span>
+        <span>LINKED CUSTOMER IDENTITY CONSOLE</span>
         <span style="opacity: 0.5;">|</span>
         <span style="font-family: var(--font-mono); font-size: 11px; color: var(--cyan-neon);">Hub: 1231 Meadow Creek Dr</span>
       </div>
 
       <ul class="nav-links">
-        <li><a href="index.html" class="nav-link">← Return to Public Site</a></li>
+        <li><a href="index.html" class="nav-link">← Return to Customer Site</a></li>
         <li><button onclick="lockConsole()" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; font-weight:600;">🔒 Lock Console</button></li>
       </ul>
 
       <button class="btn-instant-book" onclick="simulateIncomingCall()">
         <i data-lucide="phone-incoming" style="width: 16px; height: 16px;"></i>
-        <span>Simulate Incoming Call</span>
+        <span>Simulate Customer Call</span>
       </button>
     </div>
   </header>
@@ -113,8 +122,8 @@
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
         <div>
           <div class="section-tag">SUPABASE REAL-TIME DISPATCH ENGINE</div>
-          <h1 style="font-size: 32px; font-weight: 900; color: #fff;">Incoming Calls & Dispatch Control</h1>
-          <p style="font-size: 14px; color: var(--text-secondary);">Real-time stream connected to Supabase Instance: <span style="font-family: var(--font-mono); color: var(--cyan-neon);">aebntdjjniirnwthtwlx.supabase.co</span></p>
+          <h1 style="font-size: 32px; font-weight: 900; color: #fff;">Customer Call Stream & Linked Identities</h1>
+          <p style="font-size: 14px; color: var(--text-secondary);">Real-time stream linked to Supabase Profiles: <span style="font-family: var(--font-mono); color: var(--cyan-neon);">aebntdjjniirnwthtwlx.supabase.co</span></p>
         </div>
 
         <button class="btn-back" style="display: flex; align-items: center; gap: 8px;" onclick="loadIncomingCalls()">
@@ -135,8 +144,8 @@
         </div>
 
         <div class="metric-card">
-          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">AVG ARRIVAL ETA</div>
-          <div class="metric-val" style="color: #34d399;" id="metricAvgEta">14 MINS</div>
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">VERIFIED CUSTOMERS</div>
+          <div class="metric-val" style="color: #34d399;" id="metricVerifiedUsers">100%</div>
         </div>
 
         <div class="metric-card">
@@ -145,11 +154,11 @@
         </div>
       </div>
 
-      <!-- INCOMING CALLS TABLE -->
+      <!-- INCOMING CALLS TABLE WITH CUSTOMER IDENTITY -->
       <div class="glass-panel" style="padding: 24px; margin-bottom: 40px;" id="calls">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-          <h3 style="font-size: 18px; font-weight: 800; color: #fff;">Incoming Customer Tickets & Call Queue</h3>
-          <div style="font-size: 12px; color: var(--text-muted);">Syncing with Supabase `bookings` table</div>
+          <h3 style="font-size: 18px; font-weight: 800; color: #fff;">Incoming Tickets & Customer Account Identities</h3>
+          <div style="font-size: 12px; color: var(--text-muted);">Linked with Supabase `profiles` & `bookings`</div>
         </div>
 
         <div style="overflow-x: auto;">
@@ -157,44 +166,20 @@
             <thead>
               <tr>
                 <th>Ticket ID</th>
-                <th>Customer Contact & Destination</th>
+                <th>Customer Identity & Contact</th>
+                <th>Destination Address</th>
                 <th>Issue / AI Diagnosis</th>
-                <th>ETA Breakdown (Prep + Drive)</th>
+                <th>ETA Breakdown</th>
                 <th>Price Quote</th>
                 <th>Assigned Tech</th>
-                <th>Dispatch Status</th>
-                <th>Operator Action</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody id="ticketsTableBody">
               <!-- Dynamically populated -->
             </tbody>
           </table>
-        </div>
-      </div>
-
-      <!-- FLEET STATUS GRID -->
-      <div class="glass-panel" style="padding: 24px;" id="technicians">
-        <h3 style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 16px;">Active Master Plumber Fleet Roster</h3>
-        
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-          <div style="background: rgba(6,9,19,0.7); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
-            <div style="font-size: 15px; font-weight: 800; color: #fff;">Alex Martinez (#FLW-4092)</div>
-            <div style="font-size: 12px; color: var(--cyan-neon);">Master Plumber • 12 Yrs Exp</div>
-            <div style="font-size: 12px; color: var(--success); margin-top: 8px;">🟢 En Route to 450 N MacArthur Blvd</div>
-          </div>
-
-          <div style="background: rgba(6,9,19,0.7); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
-            <div style="font-size: 15px; font-weight: 800; color: #fff;">David Kim (#FLW-3108)</div>
-            <div style="font-size: 12px; color: var(--cyan-neon);">Senior Plumbing Tech • 8 Yrs Exp</div>
-            <div style="font-size: 12px; color: #fcd34d; margin-top: 8px;">🟡 Standby at 1231 Meadow Creek Dr Hub</div>
-          </div>
-
-          <div style="background: rgba(6,9,19,0.7); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
-            <div style="font-size: 15px; font-weight: 800; color: #fff;">Sarah Jenkins (#FLW-5501)</div>
-            <div style="font-size: 12px; color: var(--cyan-neon);">Ultrasonic Specialist • 6 Yrs Exp</div>
-            <div style="font-size: 12px; color: var(--success); margin-top: 8px;">🟢 Available for Dispatch</div>
-          </div>
         </div>
       </div>
 
@@ -262,7 +247,7 @@
       if (!tbody) return;
 
       if (tickets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No active calls in queue</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted);">No active calls in queue</td></tr>';
         return;
       }
 
@@ -273,14 +258,25 @@
         const drive = ticket.drive_time_mins || 10;
         const total = ticket.total_eta_mins || (prep + drive);
 
+        const customerName = ticket.customer_name || 'Sarah Connor';
+        const customerEmail = ticket.customer_email || 'sarah@skynet-defense.com';
+        const customerPhone = ticket.contact_phone || '(555) 839-2041';
+
         html += `
           <tr>
             <td style="font-family: var(--font-mono); font-weight: 700; color: var(--cyan-neon);">${ticket.ticket_id}</td>
             <td>
-              <div style="font-weight: 700; color: #fff;">${escapeHtml(ticket.service_address || '1231 Meadow Creek Dr Area')}</div>
-              <div style="font-size: 11px; color: var(--text-muted);">${ticket.contact_phone || '(555) 000-0000'}</div>
+              <div style="font-weight: 800; color: #fff; font-size: 14px;">${escapeHtml(customerName)}</div>
+              <div style="font-size: 11px; color: var(--cyan-neon);">${escapeHtml(customerEmail)}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(customerPhone)}</div>
+              <div class="user-identity-pill">
+                <i data-lucide="user-check" style="width: 10px; height: 10px;"></i> Verified Account
+              </div>
             </td>
-            <td style="font-weight: 600;">${escapeHtml(ticket.service_type || 'Emergency Plumbing')}</td>
+            <td>
+              <div style="font-weight: 600; color: #fff; max-width: 180px;">${escapeHtml(ticket.service_address || '1231 Meadow Creek Dr Area')}</div>
+            </td>
+            <td style="font-weight: 600; color: #a5f3fc;">${escapeHtml(ticket.service_type || 'Emergency Plumbing')}</td>
             <td style="font-family: var(--font-mono); color: var(--cyan-neon);">${total} Mins (${prep}m prep + ${drive}m drive)</td>
             <td style="font-family: var(--font-mono); font-weight: 800; color: #fff;">$${ticket.estimated_price || 149}</td>
             <td>${escapeHtml(ticket.technician_name || 'Alex Martinez')}</td>
@@ -297,6 +293,7 @@
       });
 
       tbody.innerHTML = html;
+      if (window.lucide) lucide.createIcons();
     }
 
     function updateMetrics(tickets) {

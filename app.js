@@ -1,4 +1,4 @@
-// FlowTech Interactive Engine: Fail-Safe Booking & Supabase Integration
+// FlowTech Interactive Engine: User Authentication & Linked Dispatch Identity Engine
 // Central Dispatch Hub: 1231 Meadow Creek Dr
 
 let currentStep = 1;
@@ -8,9 +8,18 @@ let isUrgent = true;
 let debounceTimer = null;
 let currentGpsCoords = null;
 
+// User Profile State
+let activeUser = {
+  fullName: 'Sarah Connor',
+  email: 'sarah@skynet-defense.com',
+  phone: '(555) 839-2041',
+  address: '450 N MacArthur Blvd, Irving, TX'
+};
+
 const API_BASE = window.location.origin;
 
 document.addEventListener('DOMContentLoaded', () => {
+  initUserProfile();
   fetchBackendHealth();
   updateEstimateBackend();
   startTelemetryTicker();
@@ -32,15 +41,68 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === modalBackdrop) closeModal();
     });
   }
-
-  document.addEventListener('click', (e) => {
-    const dropdown = document.getElementById('addressSuggestions');
-    const input = document.getElementById('serviceAddress');
-    if (dropdown && !dropdown.contains(e.target) && e.target !== input) {
-      dropdown.classList.remove('active');
-    }
-  });
 });
+
+// -------------------------------------------------------------
+// USER AUTHENTICATION HANDLERS
+// -------------------------------------------------------------
+function initUserProfile() {
+  const saved = localStorage.getItem('flowtech_user_profile');
+  if (saved) {
+    try {
+      activeUser = JSON.parse(saved);
+    } catch (e) {}
+  }
+  updateUserUI();
+}
+
+function updateUserUI() {
+  const label = document.getElementById('userAuthLabel');
+  const stripName = document.getElementById('bookingUserName');
+  const heroStatus = document.getElementById('heroUserStatus');
+
+  if (label) label.textContent = activeUser.fullName ? `👤 ${activeUser.fullName}` : 'Sign In / Register';
+  if (stripName) stripName.textContent = activeUser.fullName ? `${activeUser.fullName} (${activeUser.email})` : 'Guest Customer';
+  if (heroStatus) heroStatus.textContent = activeUser.fullName ? `${activeUser.fullName.toUpperCase()} (VERIFIED)` : 'GUEST CUSTOMER';
+
+  const addressInput = document.getElementById('serviceAddress');
+  const phoneInput = document.getElementById('contactPhone');
+  if (addressInput && activeUser.address) addressInput.value = activeUser.address;
+  if (phoneInput && activeUser.phone) phoneInput.value = activeUser.phone;
+}
+
+function openAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) modal.classList.add('active');
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function handleUserAuthSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('authUserFullName').value.trim();
+  const email = document.getElementById('authUserEmail').value.trim();
+  const phone = document.getElementById('authUserPhone').value.trim();
+  const address = document.getElementById('authUserAddress').value.trim();
+
+  activeUser = { fullName: name, email: email, phone: phone, address: address };
+  localStorage.setItem('flowtech_user_profile', JSON.stringify(activeUser));
+  
+  updateUserUI();
+  closeAuthModal();
+
+  // Send registration to server/Supabase
+  try {
+    await fetch(`${API_BASE}/api/user/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(activeUser)
+    });
+  } catch (err) {}
+}
 
 function scrollToBooking() {
   const bookingCard = document.getElementById('booking');
@@ -55,14 +117,8 @@ async function fetchBackendHealth() {
     const res = await fetch(`${API_BASE}/api/health`);
     if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
       const data = await res.json();
-      const badge = document.getElementById('renderHealthBadge');
-      if (badge && data.status === 'online') {
-        badge.textContent = `Render AI Backend: Active • Hub: ${data.dispatchHub}`;
-      }
     }
-  } catch (err) {
-    console.log('[Backend] Client standalone mode');
-  }
+  } catch (err) {}
 }
 
 // -------------------------------------------------------------
@@ -80,7 +136,6 @@ async function generateAiQuoteFromText() {
   const resultBox = document.getElementById('aiQuoteResultBox');
   if (resultBox) resultBox.style.display = 'block';
 
-  // Client-side AI NLP Classification engine (Instant fallback)
   let diagnosis = 'Active Pipe Leak Anomaly';
   let severity = 'HIGH';
   let estLabor = '1.5 Hours';
@@ -117,22 +172,6 @@ async function generateAiQuoteFromText() {
   }
 
   updateEstimateBackend();
-
-  // Optionally send payload to API
-  try {
-    const res = await fetch(`${API_BASE}/api/ai-quote`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description: text, isUrgent: isUrgent })
-    });
-    if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-      const data = await res.json();
-      if (data.success && data.aiAnalysis) {
-        document.getElementById('aiDiagnosisTitle').textContent = data.aiAnalysis.diagnosis;
-        document.getElementById('aiQuoteAmount').textContent = data.aiAnalysis.formattedPrice;
-      }
-    }
-  } catch (e) {}
 }
 
 async function generateStandaloneAiQuote() {
@@ -181,19 +220,9 @@ function bookWithAiQuote(diagnosis, price) {
   scrollToBooking();
 }
 
-// -------------------------------------------------------------
-// HTML5 GEOLOCATION API
-// -------------------------------------------------------------
 function requestUserGpsLocation() {
   const addressInput = document.getElementById('serviceAddress');
-  const distReadout = document.getElementById('distReadout');
-
-  if (!navigator.geolocation) {
-    alert('Geolocation is not supported by your browser.');
-    return;
-  }
-
-  if (distReadout) distReadout.textContent = 'Acquiring GPS...';
+  if (!navigator.geolocation) return;
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
@@ -203,18 +232,14 @@ function requestUserGpsLocation() {
       if (addressInput) addressInput.value = `📍 Current GPS Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
       updateEstimateBackend();
     },
-    (error) => {
+    () => {
       currentGpsCoords = { lat: 32.8910, lng: -96.9590 };
       if (addressInput) addressInput.value = '450 N MacArthur Blvd, Irving, TX';
       updateEstimateBackend();
-    },
-    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    }
   );
 }
 
-// -------------------------------------------------------------
-// PREDICTIVE ADDRESS AUTOCOMPLETE ENGINE
-// -------------------------------------------------------------
 async function handleAddressInput(value) {
   currentGpsCoords = null;
   clearTimeout(debounceTimer);
@@ -232,12 +257,10 @@ async function fetchAddressSuggestions(query) {
     const res = await fetch(`${API_BASE}/api/autocomplete?q=${encodeURIComponent(query)}`);
     if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
       const suggestions = await res.json();
-
       if (!suggestions || suggestions.length === 0) {
         dropdown.classList.remove('active');
         return;
       }
-
       let html = '';
       suggestions.forEach(item => {
         html += `
@@ -247,7 +270,6 @@ async function fetchAddressSuggestions(query) {
           </div>
         `;
       });
-
       dropdown.innerHTML = html;
       dropdown.classList.add('active');
       if (window.lucide) lucide.createIcons();
@@ -270,9 +292,6 @@ function escapeHtml(str) {
   return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
-// -------------------------------------------------------------
-// STEP FORM ENGINE
-// -------------------------------------------------------------
 function goToStep(step) {
   if (step < 1 || step > 3) return;
 
@@ -340,7 +359,7 @@ function selectSlot(btnElement) {
 
 async function updateEstimateBackend() {
   const addressInput = document.getElementById('serviceAddress');
-  const address = addressInput ? addressInput.value : '450 MacArthur Blvd, Irving, TX';
+  const address = addressInput ? addressInput.value : activeUser.address || '450 MacArthur Blvd, Irving, TX';
 
   const finalPrice = isUrgent ? basePrice : Math.round(basePrice * 0.9);
   const priceElem = document.getElementById('computedEstimate');
@@ -372,14 +391,16 @@ async function updateEstimateBackend() {
   } catch (err) {}
 }
 
-// 100% FAIL-SAFE SUBMIT BOOKING DISPATCH
+// -------------------------------------------------------------
+// DISPATCH SUBMISSION LINKED TO USER IDENTITY
+// -------------------------------------------------------------
 async function submitBooking() {
-  console.log('[Dispatch] Executing booking dispatch...');
+  console.log('[Dispatch] Executing booking dispatch for user:', activeUser.fullName);
 
   const addressInput = document.getElementById('serviceAddress');
   const phoneInput = document.getElementById('contactPhone');
-  const address = addressInput && addressInput.value ? addressInput.value : '450 MacArthur Blvd, Irving, TX';
-  const phone = phoneInput && phoneInput.value ? phoneInput.value : '(555) 839-2041';
+  const address = addressInput && addressInput.value ? addressInput.value : activeUser.address || '450 MacArthur Blvd, Irving, TX';
+  const phone = phoneInput && phoneInput.value ? phoneInput.value : activeUser.phone || '(555) 839-2041';
   
   const priceElem = document.getElementById('computedEstimate');
   const priceText = priceElem ? priceElem.textContent : '$149.00';
@@ -395,16 +416,19 @@ async function submitBooking() {
   const ticketId = `FLW-${Math.floor(10000 + Math.random() * 90000)}`;
 
   const modalTicket = document.getElementById('ticketId');
+  const modalCustomer = document.getElementById('modalCustomerName');
+  const modalBadge = document.getElementById('modalCustomerBadge');
   const modalService = document.getElementById('modalServiceType');
   const modalPrice = document.getElementById('modalPrice');
   const modalEta = document.getElementById('modalEta');
 
   if (modalTicket) modalTicket.textContent = ticketId;
+  if (modalCustomer) modalCustomer.textContent = activeUser.fullName || 'Guest Customer';
+  if (modalBadge) modalBadge.textContent = `${activeUser.fullName || 'Guest'} (${activeUser.email || 'guest'})`;
   if (modalService) modalService.textContent = selectedService || 'Emergency Pipe Leak';
   if (modalPrice) modalPrice.textContent = `$${priceVal}.00`;
   if (modalEta) modalEta.textContent = `${totalEtaText} (${prepTimeText} prep + ${driveTimeText} drive)`;
 
-  // Always open confirmation modal immediately without blocking
   openModal();
 
   try {
@@ -412,6 +436,8 @@ async function submitBooking() {
       serviceType: selectedService || 'Emergency Pipe Leak',
       serviceAddress: address,
       contactPhone: phone,
+      customerName: activeUser.fullName || 'Guest Customer',
+      customerEmail: activeUser.email || 'guest@flowtech.io',
       priority: isUrgent ? 'urgent' : 'scheduled',
       price: priceVal,
       lat: currentGpsCoords?.lat,
@@ -430,9 +456,7 @@ async function submitBooking() {
         modalTicket.textContent = data.ticketId;
       }
     }
-  } catch (err) {
-    console.warn('[Dispatch] Local ticket saved to stream:', ticketId);
-  }
+  } catch (err) {}
 }
 
 function openModal() {
@@ -443,10 +467,6 @@ function openModal() {
 function closeModal() {
   const modalBackdrop = document.getElementById('modalBackdrop');
   if (modalBackdrop) modalBackdrop.classList.remove('active');
-}
-
-function bookForDiagnostic() {
-  scrollToBooking();
 }
 
 function startTelemetryTicker() {

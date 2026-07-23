@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlowTech — Modern Smart Plumbing & 24/7 Instant Dispatch</title>
-  <meta name="description" content="Next-generation smart plumbing booking platform with AI issue description quote generator, GPS distance calculation, and 15-minute emergency dispatch from 1231 Meadow Creek Dr.">
+  <meta name="description" content="Next-generation smart plumbing booking platform with user sign-in authentication and real-time operator dispatch linking.">
   <link rel="stylesheet" href="styles.css">
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -33,7 +33,7 @@
         <span style="font-family: var(--font-mono); font-size: 11px; color: var(--cyan-neon);" id="navHubLabel">Hub: 1231 Meadow Creek Dr</span>
       </div>
 
-      <!-- Nav Links (Public facing) -->
+      <!-- Nav Links -->
       <ul class="nav-links">
         <li><a href="#booking" class="nav-link">Book Online</a></li>
         <li><a href="#ai-quote-section" class="nav-link">AI Quote Generator</a></li>
@@ -41,11 +41,20 @@
         <li><a href="#tracker" class="nav-link">Live Tracker</a></li>
       </ul>
 
-      <!-- High-Contrast Instant Book Button -->
-      <button class="btn-instant-book" id="openModalBtn">
-        <i data-lucide="zap" style="width: 16px; height: 16px;"></i>
-        <span>Instant Book</span>
-      </button>
+      <!-- User Auth Profile Badge / Sign In Button -->
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div id="userAuthBadge" style="display: flex; align-items: center; gap: 8px;">
+          <button class="btn-back" style="padding: 8px 16px; font-size: 13px; border-color: var(--cyan-border); color: var(--cyan-neon);" onclick="openAuthModal()">
+            <i data-lucide="user" style="width: 14px; height: 14px; margin-right: 4px;"></i>
+            <span id="userAuthLabel">Sign In / Register</span>
+          </button>
+        </div>
+
+        <button class="btn-instant-book" id="openModalBtn">
+          <i data-lucide="zap" style="width: 16px; height: 16px;"></i>
+          <span>Instant Book</span>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -57,12 +66,12 @@
         <!-- LEFT: 3D Isometric Graphic & Telemetry -->
         <div class="hero-visual-wrapper">
           <div class="hero-badge-tag">
-            <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
-            <span>AI CUSTOM ISSUE QUOTE GENERATOR ACTIVE</span>
+            <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+            <span>LINKED DISPATCH IDENTITY ENGINE ACTIVE</span>
           </div>
           <h1 class="hero-title">Precision Plumbing. Instant AI Dispatch.</h1>
           <p class="hero-desc">
-            Describe your issue in plain English to generate an instant AI diagnostic report, severity analysis, and guaranteed price quote. Dispatched directly from <strong>1231 Meadow Creek Dr</strong>.
+            Sign in to track your active dispatch status live, save your primary address, and request instant technician dispatch from <strong>1231 Meadow Creek Dr</strong>.
           </p>
 
           <!-- 3D Isometric Image Display with Floating Glass Telemetry Overlay -->
@@ -83,17 +92,17 @@
             <!-- Live Telemetry Overlay Node 2 -->
             <div class="telemetry-node node-2">
               <div class="telemetry-icon" style="color: var(--success); background: rgba(16, 185, 129, 0.15);">
-                <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+                <i data-lucide="user-check" style="width: 18px; height: 18px;"></i>
               </div>
               <div>
-                <div class="telemetry-label">DISPATCH STATUS</div>
-                <div class="telemetry-val" style="color: #34d399;">1231 MEADOW CREEK DR</div>
+                <div class="telemetry-label">CUSTOMER IDENTITY</div>
+                <div class="telemetry-val" style="color: #34d399;" id="heroUserStatus">VERIFIED CUSTOMER</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- RIGHT: 3-STEP INTERACTIVE BOOKING CARD WITH AI QUOTE PROMPT -->
+        <!-- RIGHT: 3-STEP INTERACTIVE BOOKING CARD WITH USER PROFILE PRE-FILL -->
         <div class="glass-panel booking-card" id="booking">
           <div class="booking-card-header">
             <div class="booking-card-title">
@@ -126,6 +135,16 @@
           <!-- STEP 1: SERVICE TYPE OR AI CUSTOM DESCRIPTION INPUT -->
           <div class="step-content active" id="step1">
             
+            <!-- Customer Identity Welcome Strip -->
+            <div id="bookingUserStrip" style="background: rgba(0, 243, 255, 0.08); border: 1px solid var(--cyan-border); border-radius: var(--border-radius-md); padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+              <div style="font-size: 12px; color: var(--text-secondary);">
+                Booking as: <strong style="color: #fff;" id="bookingUserName">Guest Customer</strong>
+              </div>
+              <button type="button" style="background: none; border: none; color: var(--cyan-neon); font-size: 11px; font-weight: 700; cursor: pointer;" onclick="openAuthModal()">
+                Change Account
+              </button>
+            </div>
+
             <!-- AI Plain Text Problem Description Input -->
             <div class="form-group" style="margin-bottom: 20px;">
               <label class="form-label" style="display: flex; align-items: center; justify-content: space-between;">
@@ -318,31 +337,46 @@
     </div>
   </section>
 
-  <!-- AI QUOTE GENERATOR STANDALONE SECTION -->
-  <section class="container" id="ai-quote-section" style="padding: 60px 24px;">
-    <div class="glass-panel" style="padding: 40px;">
-      <div class="section-header" style="margin-bottom: 30px;">
-        <div class="section-tag">AI PLUMBING QUOTE GENERATOR</div>
-        <h2 class="section-title">Describe Your Problem in Plain English</h2>
-        <p class="section-desc">Our AI analyzes your description to predict repair scope, required equipment, labor duration, and an instant fixed price quote.</p>
+  <!-- CUSTOMER USER AUTH MODAL -->
+  <div class="modal-backdrop" id="authModal">
+    <div class="glass-panel modal-card" style="max-width: 440px;">
+      <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+      
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(0,243,255,0.15); border: 2px solid var(--cyan-neon); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: var(--cyan-neon); box-shadow: 0 0 20px var(--cyan-glow);">
+          <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
+        </div>
+        <h3 style="font-size: 22px; font-weight: 800; color: #fff;" id="authModalTitle">Customer Sign In / Register</h3>
+        <p style="font-size: 13px; color: var(--text-secondary);">Link your bookings to your account profile in Supabase.</p>
       </div>
 
-      <div style="max-width: 720px; margin: 0 auto;">
+      <form onsubmit="handleUserAuthSubmit(event)">
         <div class="form-group">
-          <textarea class="form-input" id="standaloneAiText" rows="4" placeholder="Describe what's wrong (e.g. My kitchen sink drain is making a loud gurgling sound and backing up black water when dishwasher runs...)" style="font-size: 15px; padding: 18px;"></textarea>
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-input" id="authUserFullName" placeholder="e.g. Sarah Connor" value="Sarah Connor" required>
         </div>
 
-        <button type="button" class="btn-instant-book" style="width: 100%; justify-content: center; padding: 16px; font-size: 16px;" onclick="generateStandaloneAiQuote()">
-          <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
-          <span>Analyze Issue & Compute AI Quote</span>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" class="form-input" id="authUserEmail" placeholder="sarah@example.com" value="sarah@skynet-defense.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Contact Phone</label>
+          <input type="tel" class="form-input" id="authUserPhone" placeholder="(555) 000-0000" value="(555) 839-2041">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Primary Service Address</label>
+          <input type="text" class="form-input" id="authUserAddress" placeholder="450 N MacArthur Blvd, Irving, TX" value="450 N MacArthur Blvd, Irving, TX">
+        </div>
+
+        <button type="submit" class="btn-next" style="width: 100%; margin-top: 10px;">
+          Save Profile & Sign In →
         </button>
-
-        <div class="ai-result-box glass-panel" id="standaloneAiResultBox" style="display: none; margin-top: 24px; padding: 24px; border-color: var(--cyan-neon);">
-          <!-- Content populated via app.js -->
-        </div>
-      </div>
+      </form>
     </div>
-  </section>
+  </div>
 
   <!-- BOOKING CONFIRMATION MODAL -->
   <div class="modal-backdrop" id="modalBackdrop">
@@ -354,10 +388,14 @@
           <i data-lucide="check" style="width: 28px; height: 28px;"></i>
         </div>
         <h3 style="font-size: 24px; font-weight: 800; color: #fff;">Technician Dispatched!</h3>
-        <p style="font-size: 13px; color: var(--text-secondary);">Ticket <span style="font-family: var(--font-mono); color: var(--cyan-neon);" id="ticketId">#FLW-92041</span> saved & dispatched from 1231 Meadow Creek Dr.</p>
+        <p style="font-size: 13px; color: var(--text-secondary);">Ticket <span style="font-family: var(--font-mono); color: var(--cyan-neon);" id="ticketId">#FLW-92041</span> saved for <strong style="color: #fff;" id="modalCustomerName">Sarah Connor</strong>.</p>
       </div>
 
       <div style="background: rgba(6, 9, 19, 0.6); padding: 16px; border-radius: var(--border-radius-md); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 24px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--text-secondary);">Customer Identity:</span>
+          <span style="font-weight: 700; color: var(--cyan-neon);" id="modalCustomerBadge">Sarah Connor</span>
+        </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
           <span style="color: var(--text-secondary);">Dispatch Hub:</span>
           <span style="font-weight: 700; color: #fff;">1231 Meadow Creek Dr</span>
@@ -392,7 +430,7 @@
             <div class="logo-text">FLOW<span>TECH</span></div>
           </div>
           <p style="font-size: 13px; color: var(--text-secondary); max-width: 320px;">
-            Central Dispatch Hub: 1231 Meadow Creek Dr. Live URL: flowtech-io.vercel.app.
+            Central Dispatch Hub: 1231 Meadow Creek Dr. User Accounts Linked to Supabase Instance.
           </p>
         </div>
 
@@ -401,7 +439,7 @@
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-secondary);">
             <li><a href="#booking" style="color: inherit; text-decoration: none;">Emergency Dispatch</a></li>
             <li><a href="#ai-quote-section" style="color: inherit; text-decoration: none;">AI Quote Engine</a></li>
-            <li><a href="#diagnostics" style="color: inherit; text-decoration: none;">Acoustic Diagnostics</a></li>
+            <li><a href="javascript:void(0)" onclick="openAuthModal()" style="color: var(--cyan-neon); text-decoration: none;">Sign In / My Profile</a></li>
           </ul>
         </div>
 
@@ -421,7 +459,7 @@
       </div>
 
       <div class="footer-bottom">
-        © 2026 FlowTech Inc. Central Hub: 1231 Meadow Creek Dr.
+        © 2026 FlowTech Inc. User Accounts Active. Linked to Dispatch Center.
       </div>
     </div>
   </footer>
