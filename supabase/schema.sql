@@ -1,8 +1,10 @@
--- FlowTech Supabase Schema: Customer Profiles & Dispatch Bookings
+-- FlowTech Supabase Schema: Customer Profiles with Username & Password Auth
 
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
   full_name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   phone TEXT,
@@ -18,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.bookings (
   service_address TEXT NOT NULL,
   contact_phone TEXT NOT NULL,
   customer_name TEXT DEFAULT 'Guest Customer',
+  customer_username TEXT DEFAULT 'guest_user',
   customer_email TEXT DEFAULT 'guest@flowtech.io',
   user_id UUID,
   dispatch_origin TEXT DEFAULT '1231 Meadow Creek Dr',

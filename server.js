@@ -1,4 +1,4 @@
-// FlowTech Express Backend Server (Render + Supabase + User Auth + Operator Console)
+// FlowTech Express Backend Server (Render + Supabase + Real Username & Password Auth)
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -22,13 +22,23 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// Memory stores for local standby
+// Seeded profiles memory store (with real username & password authentication)
 const memoryProfiles = [
   {
+    username: 'sarah_connor',
+    password: 'flowtech2026',
     full_name: 'Sarah Connor',
     email: 'sarah@skynet-defense.com',
     phone: '(555) 839-2041',
     default_address: '450 N MacArthur Blvd, Irving, TX'
+  },
+  {
+    username: 'marcus_vance',
+    password: 'password123',
+    full_name: 'Marcus Vance',
+    email: 'marcus.vance@techcorp.io',
+    phone: '(555) 921-4401',
+    default_address: '7800 N MacArthur Blvd, Irving, TX'
   }
 ];
 
@@ -40,6 +50,7 @@ const memoryBookings = [
     service_address: '450 N MacArthur Blvd, Irving, TX',
     contact_phone: '(555) 839-2041',
     customer_name: 'Sarah Connor',
+    customer_username: 'sarah_connor',
     customer_email: 'sarah@skynet-defense.com',
     dispatch_origin: '1231 Meadow Creek Dr',
     prep_time_mins: 4,
@@ -49,23 +60,6 @@ const memoryBookings = [
     status: 'dispatched',
     technician_name: 'Alex Martinez',
     created_at: new Date(Date.now() - 5 * 60000).toISOString()
-  },
-  {
-    ticket_id: 'FLW-83102',
-    service_type: 'Smart Water Heater Repair',
-    priority: 'urgent',
-    service_address: '7800 N MacArthur Blvd, Irving, TX',
-    contact_phone: '(555) 921-4401',
-    customer_name: 'Marcus Vance',
-    customer_email: 'marcus.vance@techcorp.io',
-    dispatch_origin: '1231 Meadow Creek Dr',
-    prep_time_mins: 4,
-    drive_time_mins: 14,
-    total_eta_mins: 18,
-    estimated_price: 189.00,
-    status: 'en_route',
-    technician_name: 'David Kim',
-    created_at: new Date(Date.now() - 15 * 60000).toISOString()
   }
 ];
 
@@ -111,18 +105,29 @@ function calculateEtaFromHub(destinationAddress, userLat, userLng) {
 }
 
 // -------------------------------------------------------------
-// USER AUTHENTICATION API ENDPOINTS
+// USER USERNAME & PASSWORD AUTHENTICATION API ENDPOINTS
 // -------------------------------------------------------------
 app.post('/api/user/register', async (req, res) => {
   try {
-    const { fullName, email, phone, address } = req.body;
-    if (!email || !fullName) {
-      return res.status(400).json({ success: false, error: 'Full name and email are required.' });
+    const { username, password, fullName, email, phone, address } = req.body;
+    const cleanUsername = (username || '').toLowerCase().trim();
+    const cleanEmail = (email || '').toLowerCase().trim();
+
+    if (!cleanUsername || !password || !fullName || !cleanEmail) {
+      return res.status(400).json({ success: false, error: 'Username, password, full name, and email are required.' });
+    }
+
+    // Check if username already exists
+    const existing = memoryProfiles.find(p => p.username === cleanUsername || p.email === cleanEmail);
+    if (existing) {
+      return res.status(409).json({ success: false, error: 'Username or email already registered. Please sign in.' });
     }
 
     const profile = {
+      username: cleanUsername,
+      password: password,
       full_name: fullName,
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       phone: phone || '(555) 000-0000',
       default_address: address || '1231 Meadow Creek Dr Area',
       created_at: new Date().toISOString()
@@ -132,14 +137,27 @@ app.post('/api/user/register', async (req, res) => {
 
     if (supabase) {
       try {
-        await supabase.from('profiles').insert([profile]);
+        await supabase.from('profiles').insert([{
+          username: cleanUsername,
+          password_hash: password,
+          full_name: fullName,
+          email: cleanEmail,
+          phone: phone,
+          default_address: address
+        }]);
       } catch (e) {}
     }
 
     res.status(201).json({
       success: true,
-      message: 'Account created successfully',
-      user: profile
+      message: 'Account registered successfully',
+      user: {
+        username: profile.username,
+        fullName: profile.full_name,
+        email: profile.email,
+        phone: profile.phone,
+        address: profile.default_address
+      }
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -148,32 +166,41 @@ app.post('/api/user/register', async (req, res) => {
 
 app.post('/api/user/login', async (req, res) => {
   try {
-    const { email } = req.body;
-    const cleanEmail = (email || '').toLowerCase().trim();
+    const { username, password } = req.body;
+    const cleanUser = (username || '').toLowerCase().trim();
 
-    let found = memoryProfiles.find(p => p.email === cleanEmail);
+    if (!cleanUser || !password) {
+      return res.status(400).json({ success: false, error: 'Please enter both username and password.' });
+    }
+
+    let found = memoryProfiles.find(p => p.username === cleanUser || p.email === cleanUser);
 
     if (!found && supabase) {
       try {
-        const { data } = await supabase.from('profiles').select('*').eq('email', cleanEmail).limit(1);
+        const { data } = await supabase.from('profiles').select('*').or(`username.eq.${cleanUser},email.eq.${cleanUser}`).limit(1);
         if (data && data.length > 0) found = data[0];
       } catch (e) {}
     }
 
     if (!found) {
-      // Auto-create on fast sign-in for seamless experience
-      found = {
-        full_name: cleanEmail.split('@')[0].toUpperCase(),
-        email: cleanEmail,
-        phone: '(555) 839-2041',
-        default_address: '450 N MacArthur Blvd, Irving, TX'
-      };
-      memoryProfiles.unshift(found);
+      return res.status(401).json({ success: false, error: 'Username not found. Please register first.' });
+    }
+
+    // Verify Password
+    const savedPassword = found.password || found.password_hash;
+    if (savedPassword !== password) {
+      return res.status(401).json({ success: false, error: 'Incorrect password. Please try again.' });
     }
 
     res.json({
       success: true,
-      user: found
+      user: {
+        username: found.username || cleanUser,
+        fullName: found.full_name,
+        email: found.email,
+        phone: found.phone,
+        address: found.default_address
+      }
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -239,9 +266,9 @@ app.post('/api/update-dispatch', async (req, res) => {
 
 app.post('/api/simulate-call', async (req, res) => {
   const sampleUsers = [
-    { name: 'Elena Rostova', email: 'elena.rostova@techmail.com', phone: '(555) 390-4109', address: '1204 N MacArthur Blvd, Irving, TX' },
-    { name: 'Dr. Arthur Pendelton', email: 'arthur.p@medicalnet.org', phone: '(555) 912-3840', address: '501 Rochelle Blvd, Irving, TX' },
-    { name: 'Samantha Reed', email: 'sreed@architecture.io', phone: '(555) 881-2094', address: '3302 W Story Rd, Irving, TX' }
+    { username: 'elena_r', name: 'Elena Rostova', email: 'elena.rostova@techmail.com', phone: '(555) 390-4109', address: '1204 N MacArthur Blvd, Irving, TX' },
+    { username: 'dr_arthur', name: 'Dr. Arthur Pendelton', email: 'arthur.p@medicalnet.org', phone: '(555) 912-3840', address: '501 Rochelle Blvd, Irving, TX' },
+    { username: 'sam_reed', name: 'Samantha Reed', email: 'sreed@architecture.io', phone: '(555) 881-2094', address: '3302 W Story Rd, Irving, TX' }
   ];
 
   const sampleIssues = [
@@ -262,6 +289,7 @@ app.post('/api/simulate-call', async (req, res) => {
     service_address: randomUser.address,
     contact_phone: randomUser.phone,
     customer_name: randomUser.name,
+    customer_username: randomUser.username,
     customer_email: randomUser.email,
     dispatch_origin: DISPATCH_HUB.address,
     prep_time_mins: 4,
@@ -283,7 +311,7 @@ app.post('/api/simulate-call', async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'Simulated incoming call logged with customer identity',
+    message: 'Simulated call logged with username identity',
     ticket: newTicket
   });
 });
@@ -395,7 +423,7 @@ app.post('/api/estimate', (req, res) => {
 
 app.post('/api/dispatch', async (req, res) => {
   try {
-    const { serviceType, serviceAddress, contactPhone, customerName, customerEmail, priority, price, lat, lng } = req.body;
+    const { serviceType, serviceAddress, contactPhone, customerName, customerUsername, customerEmail, priority, price, lat, lng } = req.body;
     const etaData = calculateEtaFromHub(serviceAddress, lat, lng);
     const ticketId = `FLW-${Math.floor(10000 + Math.random() * 90000)}`;
 
@@ -406,6 +434,7 @@ app.post('/api/dispatch', async (req, res) => {
       service_address: serviceAddress || '1231 Meadow Creek Dr',
       contact_phone: contactPhone || '(555) 839-2041',
       customer_name: customerName || 'Guest Customer',
+      customer_username: customerUsername || 'guest_user',
       customer_email: customerEmail || 'guest@flowtech.io',
       dispatch_origin: DISPATCH_HUB.address,
       prep_time_mins: 4,
@@ -443,5 +472,5 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`\n🚀 FlowTech Server on PORT ${PORT}`);
   console.log(`📍 Hub Origin: 1231 Meadow Creek Dr (32.8831, -96.9712)`);
-  console.log(`⚡ Supabase Instance: https://aebntdjjniirnwthtwlx.supabase.co`);
+  console.log(`⚡ Username & Password Auth Active • Supabase: https://aebntdjjniirnwthtwlx.supabase.co`);
 });

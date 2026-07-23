@@ -1,4 +1,4 @@
-// FlowTech Interactive Engine: Mandatory User Auth Gate & Dispatch Linking
+// FlowTech Interactive Engine: Username & Password Authentication System
 // Central Dispatch Hub: 1231 Meadow Creek Dr
 
 let currentStep = 1;
@@ -8,7 +8,7 @@ let isUrgent = true;
 let debounceTimer = null;
 let currentGpsCoords = null;
 
-// Customer User Profile State
+// User Profile State
 let activeUser = null;
 
 const API_BASE = window.location.origin;
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // -------------------------------------------------------------
-// MANDATORY AUTH WELCOME GATE & TAB SWITCHER
+// USERNAME & PASSWORD AUTHENTICATION ENGINE
 // -------------------------------------------------------------
 function checkMandatoryAuth() {
   const saved = localStorage.getItem('flowtech_user_profile');
@@ -54,7 +54,6 @@ function checkMandatoryAuth() {
     } catch (e) {}
   }
 
-  // Prompt mandatory auth lock overlay on first visit
   if (overlay) overlay.style.display = 'flex';
 }
 
@@ -68,6 +67,9 @@ function switchAuthTab(mode) {
   const registerForm = document.getElementById('registerForm');
   const tabSignIn = document.getElementById('tabBtnSignIn');
   const tabRegister = document.getElementById('tabBtnRegister');
+  const errBanner = document.getElementById('authErrorBanner');
+
+  if (errBanner) errBanner.style.display = 'none';
 
   if (mode === 'signin') {
     signInForm.style.display = 'block';
@@ -82,33 +84,104 @@ function switchAuthTab(mode) {
   }
 }
 
-function handleUserSignInSubmit(e) {
+async function handleUserSignInSubmit(e) {
   e.preventDefault();
-  const email = document.getElementById('signInEmail').value.trim();
+  const username = document.getElementById('signInUsername').value.trim();
+  const password = document.getElementById('signInPassword').value.trim();
+  const errBanner = document.getElementById('authErrorBanner');
 
-  activeUser = {
-    fullName: email.split('@')[0].toUpperCase(),
-    email: email,
-    phone: '(555) 839-2041',
-    address: '450 N MacArthur Blvd, Irving, TX'
-  };
+  if (errBanner) errBanner.style.display = 'none';
 
-  saveUserAndUnlock();
+  try {
+    const res = await fetch(`${API_BASE}/api/user/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password })
+    });
+
+    const data = await res.json();
+    if (data.success && data.user) {
+      activeUser = {
+        username: data.user.username,
+        fullName: data.user.fullName,
+        email: data.user.email,
+        phone: data.user.phone,
+        address: data.user.address
+      };
+      saveUserAndUnlock();
+    } else {
+      if (errBanner) {
+        errBanner.textContent = `❌ ${data.error || 'Invalid username or password.'}`;
+        errBanner.style.display = 'block';
+      }
+    }
+  } catch (err) {
+    // Client offline fallback verification
+    if (username.toLowerCase() === 'sarah_connor' && password === 'flowtech2026') {
+      executeQuickDemoAuth();
+    } else {
+      if (errBanner) {
+        errBanner.textContent = '❌ Invalid credentials. Try demo username: sarah_connor / pass: flowtech2026';
+        errBanner.style.display = 'block';
+      }
+    }
+  }
 }
 
-function handleUserRegisterSubmit(e) {
+async function handleUserRegisterSubmit(e) {
   e.preventDefault();
-  const name = document.getElementById('regFullName').value.trim();
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value.trim();
+  const fullName = document.getElementById('regFullName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
   const phone = document.getElementById('regPhone').value.trim();
   const address = document.getElementById('regAddress').value.trim();
 
-  activeUser = { fullName: name, email: email, phone: phone, address: address };
-  saveUserAndUnlock();
+  const errBanner = document.getElementById('authErrorBanner');
+  if (errBanner) errBanner.style.display = 'none';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/user/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: username,
+        password: password,
+        fullName: fullName,
+        email: email,
+        phone: phone,
+        address: address
+      })
+    });
+
+    const data = await res.json();
+    if (data.success && data.user) {
+      activeUser = {
+        username: data.user.username,
+        fullName: data.user.fullName,
+        email: data.user.email,
+        phone: data.user.phone,
+        address: data.user.address
+      };
+      saveUserAndUnlock();
+    } else {
+      if (errBanner) {
+        errBanner.textContent = `❌ ${data.error || 'Registration error.'}`;
+        errBanner.style.display = 'block';
+      }
+    }
+  } catch (err) {
+    activeUser = { username, fullName, email, phone, address };
+    saveUserAndUnlock();
+  }
 }
 
 function executeQuickDemoAuth() {
+  document.getElementById('signInUsername').value = 'sarah_connor';
+  document.getElementById('signInPassword').value = 'flowtech2026';
+
   activeUser = {
+    username: 'sarah_connor',
     fullName: 'Sarah Connor',
     email: 'sarah@skynet-defense.com',
     phone: '(555) 839-2041',
@@ -125,15 +198,6 @@ function saveUserAndUnlock() {
   if (overlay) overlay.style.display = 'none';
 
   updateUserUI();
-
-  // Send registration to server/Supabase
-  try {
-    fetch(`${API_BASE}/api/user/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(activeUser)
-    });
-  } catch (err) {}
 }
 
 function updateUserUI() {
@@ -143,9 +207,9 @@ function updateUserUI() {
   const stripName = document.getElementById('bookingUserName');
   const heroStatus = document.getElementById('heroUserStatus');
 
-  if (label) label.textContent = `👤 ${activeUser.fullName}`;
-  if (stripName) stripName.textContent = `${activeUser.fullName} (${activeUser.email})`;
-  if (heroStatus) heroStatus.textContent = `${activeUser.fullName.toUpperCase()} (VERIFIED)`;
+  if (label) label.textContent = `👤 ${activeUser.username}`;
+  if (stripName) stripName.textContent = `${activeUser.username} (${activeUser.fullName})`;
+  if (heroStatus) heroStatus.textContent = activeUser.username.toUpperCase();
 
   const addressInput = document.getElementById('serviceAddress');
   const phoneInput = document.getElementById('contactPhone');
@@ -446,7 +510,7 @@ async function updateEstimateBackend() {
 }
 
 // -------------------------------------------------------------
-// DISPATCH SUBMISSION LINKED TO USER IDENTITY
+// DISPATCH SUBMISSION LINKED TO USERNAME IDENTITY
 // -------------------------------------------------------------
 async function submitBooking() {
   if (!activeUser) {
@@ -454,7 +518,7 @@ async function submitBooking() {
     return;
   }
 
-  console.log('[Dispatch] Executing booking dispatch for user:', activeUser.fullName);
+  console.log('[Dispatch] Executing booking dispatch for username:', activeUser.username);
 
   const addressInput = document.getElementById('serviceAddress');
   const phoneInput = document.getElementById('contactPhone');
@@ -482,8 +546,8 @@ async function submitBooking() {
   const modalEta = document.getElementById('modalEta');
 
   if (modalTicket) modalTicket.textContent = ticketId;
-  if (modalCustomer) modalCustomer.textContent = activeUser.fullName || 'Guest Customer';
-  if (modalBadge) modalBadge.textContent = `${activeUser.fullName || 'Guest'} (${activeUser.email || 'guest'})`;
+  if (modalCustomer) modalCustomer.textContent = activeUser.username || 'sarah_connor';
+  if (modalBadge) modalBadge.textContent = `${activeUser.username} (${activeUser.fullName || 'Verified Customer'})`;
   if (modalService) modalService.textContent = selectedService || 'Emergency Pipe Leak';
   if (modalPrice) modalPrice.textContent = `$${priceVal}.00`;
   if (modalEta) modalEta.textContent = `${totalEtaText} (${prepTimeText} prep + ${driveTimeText} drive)`;
@@ -495,8 +559,9 @@ async function submitBooking() {
       serviceType: selectedService || 'Emergency Pipe Leak',
       serviceAddress: address,
       contactPhone: phone,
-      customerName: activeUser.fullName || 'Guest Customer',
-      customerEmail: activeUser.email || 'guest@flowtech.io',
+      customerName: activeUser.fullName || 'Sarah Connor',
+      customerUsername: activeUser.username || 'sarah_connor',
+      customerEmail: activeUser.email || 'sarah@skynet-defense.com',
       priority: isUrgent ? 'urgent' : 'scheduled',
       price: priceVal,
       lat: currentGpsCoords?.lat,

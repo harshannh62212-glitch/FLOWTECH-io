@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlowTech — Modern Smart Plumbing & 24/7 Instant Dispatch</title>
-  <meta name="description" content="Next-generation smart plumbing booking platform with mandatory user authentication and real-time operator dispatch linking.">
+  <meta name="description" content="Next-generation smart plumbing booking platform with real username and password authentication system connected to Supabase database.">
   <link rel="stylesheet" href="styles.css">
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -22,25 +22,30 @@
           <div class="logo-icon"><i data-lucide="droplets"></i></div>
           <div class="logo-text">FLOW<span>TECH</span></div>
         </div>
-        <h2 style="font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 6px;">Welcome to FlowTech</h2>
-        <p style="font-size: 13px; color: var(--text-secondary);">Please Sign In or Register your customer account to access instant AI dispatch & booking.</p>
+        <h2 style="font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 6px;">Customer Authentication Required</h2>
+        <p style="font-size: 13px; color: var(--text-secondary);">Sign in with your Username & Password or Register a new account.</p>
       </div>
 
       <!-- Auth Switcher Tabs -->
       <div class="auth-tab-row">
         <button type="button" class="auth-tab-btn active" id="tabBtnSignIn" onclick="switchAuthTab('signin')">Sign In</button>
-        <button type="button" class="auth-tab-btn" id="tabBtnRegister" onclick="switchAuthTab('register')">Register Account</button>
+        <button type="button" class="auth-tab-btn" id="tabBtnRegister" onclick="switchAuthTab('register')">Register New Account</button>
+      </div>
+
+      <!-- ERROR ALERT BANNER -->
+      <div id="authErrorBanner" style="display: none; padding: 10px 14px; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: var(--border-radius-md); color: #f87171; font-size: 12px; font-weight: 700; margin-bottom: 16px; text-align: center;">
+        ❌ Invalid credentials. Please check your username and password.
       </div>
 
       <!-- SIGN IN FORM -->
       <form id="signInForm" onsubmit="handleUserSignInSubmit(event)">
         <div class="form-group">
-          <label class="form-label">Email Address</label>
-          <input type="email" class="form-input" id="signInEmail" placeholder="sarah@skynet-defense.com" value="sarah@skynet-defense.com" required>
+          <label class="form-label">Username or Email</label>
+          <input type="text" class="form-input" id="signInUsername" placeholder="e.g. sarah_connor" value="sarah_connor" required>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Account Password / Passcode</label>
+          <label class="form-label">Account Password</label>
           <input type="password" class="form-input" id="signInPassword" placeholder="••••••••" value="flowtech2026" required>
         </div>
 
@@ -52,18 +57,28 @@
       <!-- REGISTER FORM (Hidden by default) -->
       <form id="registerForm" style="display: none;" onsubmit="handleUserRegisterSubmit(event)">
         <div class="form-group">
+          <label class="form-label">Choose Username</label>
+          <input type="text" class="form-input" id="regUsername" placeholder="e.g. sarah_connor" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Choose Password</label>
+          <input type="password" class="form-input" id="regPassword" placeholder="••••••••" required>
+        </div>
+
+        <div class="form-group">
           <label class="form-label">Full Name</label>
-          <input type="text" class="form-input" id="regFullName" placeholder="e.g. Alex Mercer" required>
+          <input type="text" class="form-input" id="regFullName" placeholder="Sarah Connor" required>
         </div>
 
         <div class="form-group">
           <label class="form-label">Email Address</label>
-          <input type="email" class="form-input" id="regEmail" placeholder="alex@example.com" required>
+          <input type="email" class="form-input" id="regEmail" placeholder="sarah@example.com" required>
         </div>
 
         <div class="form-group">
           <label class="form-label">Contact Mobile Phone</label>
-          <input type="tel" class="form-input" id="regPhone" placeholder="(555) 000-0000" required>
+          <input type="tel" class="form-input" id="regPhone" placeholder="(555) 839-2041" required>
         </div>
 
         <div class="form-group">
@@ -72,14 +87,15 @@
         </div>
 
         <button type="submit" class="btn-next" style="width: 100%; margin-top: 12px; padding: 14px;">
-          Create & Save Profile →
+          Create & Save Account →
         </button>
       </form>
 
       <!-- QUICK DEMO AUTH BUTTON -->
       <div style="margin-top: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
+        <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Demo User: <strong style="color: var(--cyan-neon);">sarah_connor</strong> | Password: <strong style="color: var(--cyan-neon);">flowtech2026</strong></div>
         <button type="button" class="btn-back" style="width: 100%; font-size: 13px; border-color: var(--cyan-neon); color: var(--cyan-neon);" onclick="executeQuickDemoAuth()">
-          ⚡ Quick Demo Auth (Login as Sarah Connor)
+          ⚡ Auto-Fill Demo Credentials (sarah_connor)
         </button>
       </div>
     </div>
@@ -138,11 +154,11 @@
         <div class="hero-visual-wrapper">
           <div class="hero-badge-tag">
             <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
-            <span>LINKED DISPATCH IDENTITY ENGINE ACTIVE</span>
+            <span>AUTHENTICATED CUSTOMER SESSION ACTIVE</span>
           </div>
           <h1 class="hero-title">Precision Plumbing. Instant AI Dispatch.</h1>
           <p class="hero-desc">
-            Signed in as a verified customer. Track your active dispatch status live, save your primary address, and request instant technician dispatch from <strong>1231 Meadow Creek Dr</strong>.
+            Signed in as verified user. Track your active dispatch status live, save your primary address, and request instant technician dispatch from <strong>1231 Meadow Creek Dr</strong>.
           </p>
 
           <!-- 3D Isometric Image Display with Floating Glass Telemetry Overlay -->
@@ -166,8 +182,8 @@
                 <i data-lucide="user-check" style="width: 18px; height: 18px;"></i>
               </div>
               <div>
-                <div class="telemetry-label">CUSTOMER IDENTITY</div>
-                <div class="telemetry-val" style="color: #34d399;" id="heroUserStatus">VERIFIED CUSTOMER</div>
+                <div class="telemetry-label">USER ACCOUNT</div>
+                <div class="telemetry-val" style="color: #34d399;" id="heroUserStatus">SARAH_CONNOR</div>
               </div>
             </div>
           </div>
@@ -209,10 +225,10 @@
             <!-- Customer Identity Welcome Strip -->
             <div id="bookingUserStrip" style="background: rgba(0, 243, 255, 0.08); border: 1px solid var(--cyan-border); border-radius: var(--border-radius-md); padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
               <div style="font-size: 12px; color: var(--text-secondary);">
-                Booking as: <strong style="color: #fff;" id="bookingUserName">Sarah Connor</strong>
+                Authenticated as: <strong style="color: #fff;" id="bookingUserName">sarah_connor (Sarah Connor)</strong>
               </div>
               <button type="button" style="background: none; border: none; color: var(--cyan-neon); font-size: 11px; font-weight: 700; cursor: pointer;" onclick="openAuthModal()">
-                Switch Account
+                Switch User
               </button>
             </div>
 
@@ -444,13 +460,13 @@
           <i data-lucide="check" style="width: 28px; height: 28px;"></i>
         </div>
         <h3 style="font-size: 24px; font-weight: 800; color: #fff;">Technician Dispatched!</h3>
-        <p style="font-size: 13px; color: var(--text-secondary);">Ticket <span style="font-family: var(--font-mono); color: var(--cyan-neon);" id="ticketId">#FLW-92041</span> saved for <strong style="color: #fff;" id="modalCustomerName">Sarah Connor</strong>.</p>
+        <p style="font-size: 13px; color: var(--text-secondary);">Ticket <span style="font-family: var(--font-mono); color: var(--cyan-neon);" id="ticketId">#FLW-92041</span> saved for <strong style="color: #fff;" id="modalCustomerName">sarah_connor</strong>.</p>
       </div>
 
       <div style="background: rgba(6, 9, 19, 0.6); padding: 16px; border-radius: var(--border-radius-md); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 24px; font-size: 13px;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span style="color: var(--text-secondary);">Customer Identity:</span>
-          <span style="font-weight: 700; color: var(--cyan-neon);" id="modalCustomerBadge">Sarah Connor</span>
+          <span style="color: var(--text-secondary);">Customer Username:</span>
+          <span style="font-weight: 700; color: var(--cyan-neon);" id="modalCustomerBadge">sarah_connor</span>
         </div>
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
           <span style="color: var(--text-secondary);">Dispatch Hub:</span>
@@ -486,7 +502,7 @@
             <div class="logo-text">FLOW<span>TECH</span></div>
           </div>
           <p style="font-size: 13px; color: var(--text-secondary); max-width: 320px;">
-            Central Dispatch Hub: 1231 Meadow Creek Dr. User Accounts Linked to Supabase Instance.
+            Central Dispatch Hub: 1231 Meadow Creek Dr. Username & Password Auth Active.
           </p>
         </div>
 
@@ -515,7 +531,7 @@
       </div>
 
       <div class="footer-bottom">
-        © 2026 FlowTech Inc. User Accounts Mandatory. Linked to Dispatch Center.
+        © 2026 FlowTech Inc. Username & Password Authentication System Verified.
       </div>
     </div>
   </footer>
