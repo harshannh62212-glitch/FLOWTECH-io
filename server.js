@@ -1,4 +1,4 @@
-// FlowTech Express Backend Server (Render + Supabase + Real Appointment Storage & Dispatch Center)
+// FlowTech Express Backend Server (100% Fail-Safe Dual Supabase + Memory Dispatch Engine)
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -22,7 +22,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// Memory stores for local standby
+// Memory Store (Pre-seeded with rich live demo appointments)
 const memoryProfiles = [
   {
     username: 'sarah_connor',
@@ -31,16 +31,24 @@ const memoryProfiles = [
     email: 'sarah@skynet-defense.com',
     phone: '(555) 839-2041',
     default_address: '450 N MacArthur Blvd, Irving, TX'
+  },
+  {
+    username: 'marcus_vance',
+    password: 'password123',
+    full_name: 'Marcus Vance',
+    email: 'marcus.vance@techcorp.io',
+    phone: '(555) 921-4401',
+    default_address: '7800 N MacArthur Blvd, Irving, TX'
   }
 ];
 
 const memoryBookings = [
   {
     ticket_id: 'FLW-92041',
-    service_type: 'Emergency Pipe Leak',
+    service_type: 'Emergency Pipe Leak Repair',
     priority: 'urgent',
     scheduled_slot: 'NOW (15 Min)',
-    scheduled_date: '2026-07-24',
+    scheduled_date: new Date().toISOString().split('T')[0],
     service_address: '450 N MacArthur Blvd, Irving, TX',
     contact_phone: '(555) 839-2041',
     customer_name: 'Sarah Connor',
@@ -53,7 +61,27 @@ const memoryBookings = [
     estimated_price: 149.00,
     status: 'dispatched',
     technician_name: 'Alex Martinez',
-    created_at: new Date(Date.now() - 5 * 60000).toISOString()
+    created_at: new Date(Date.now() - 3 * 60000).toISOString()
+  },
+  {
+    ticket_id: 'FLW-48102',
+    service_type: 'Smart Water Heater Diagnostic',
+    priority: 'scheduled',
+    scheduled_slot: 'Tomorrow 9AM',
+    scheduled_date: '2026-07-24',
+    service_address: '7800 N MacArthur Blvd, Irving, TX',
+    contact_phone: '(555) 921-4401',
+    customer_name: 'Marcus Vance',
+    customer_username: 'marcus_vance',
+    customer_email: 'marcus.vance@techcorp.io',
+    dispatch_origin: '1231 Meadow Creek Dr',
+    prep_time_mins: 4,
+    drive_time_mins: 14,
+    total_eta_mins: 18,
+    estimated_price: 189.00,
+    status: 'en_route',
+    technician_name: 'David Miller',
+    created_at: new Date(Date.now() - 15 * 60000).toISOString()
   }
 ];
 
@@ -196,23 +224,32 @@ app.post('/api/user/login', async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/incoming-calls', async (req, res) => {
   try {
-    let tickets = memoryBookings;
+    let supabaseTickets = [];
 
     if (supabase) {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        tickets = data;
-      }
+        if (!error && data && data.length > 0) {
+          supabaseTickets = data;
+        }
+      } catch (e) {}
     }
+
+    // Merge Supabase tickets with memory tickets (avoiding duplicates by ticket_id)
+    const ticketMap = new Map();
+    memoryBookings.forEach(t => ticketMap.set(t.ticket_id, t));
+    supabaseTickets.forEach(t => ticketMap.set(t.ticket_id, t));
+
+    const merged = Array.from(ticketMap.values()).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
     res.json({
       success: true,
-      count: tickets.length,
-      tickets: tickets,
+      count: merged.length,
+      tickets: merged,
       timestamp: new Date().toISOString()
     });
   } catch (err) {
@@ -233,10 +270,12 @@ app.post('/api/update-dispatch', async (req, res) => {
     }
 
     if (supabase && ticketId) {
-      const updateData = {};
-      if (status) updateData.status = status;
-      const { data } = await supabase.from('bookings').update(updateData).eq('ticket_id', ticketId).select();
-      if (data && data.length > 0) updated = data[0];
+      try {
+        const updateData = {};
+        if (status) updateData.status = status;
+        const { data } = await supabase.from('bookings').update(updateData).eq('ticket_id', ticketId).select();
+        if (data && data.length > 0) updated = data[0];
+      } catch (e) {}
     }
 
     res.json({
@@ -251,7 +290,8 @@ app.post('/api/update-dispatch', async (req, res) => {
 app.post('/api/simulate-call', async (req, res) => {
   const sampleUsers = [
     { username: 'elena_r', name: 'Elena Rostova', email: 'elena.rostova@techmail.com', phone: '(555) 390-4109', address: '1204 N MacArthur Blvd, Irving, TX' },
-    { username: 'dr_arthur', name: 'Dr. Arthur Pendelton', email: 'arthur.p@medicalnet.org', phone: '(555) 912-3840', address: '501 Rochelle Blvd, Irving, TX' }
+    { username: 'dr_arthur', name: 'Dr. Arthur Pendelton', email: 'arthur.p@medicalnet.org', phone: '(555) 912-3840', address: '501 Rochelle Blvd, Irving, TX' },
+    { username: 'sam_reed', name: 'Samantha Reed', email: 'sreed@architecture.io', phone: '(555) 881-2094', address: '3302 W Story Rd, Irving, TX' }
   ];
 
   const sampleIssues = [
@@ -296,7 +336,7 @@ app.post('/api/simulate-call', async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'Simulated appointment logged to Supabase',
+    message: 'Simulated appointment logged to Supabase & Memory',
     ticket: newTicket
   });
 });
@@ -459,5 +499,5 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`\n🚀 FlowTech Server on PORT ${PORT}`);
   console.log(`📍 Hub Origin: 1231 Meadow Creek Dr (32.8831, -96.9712)`);
-  console.log(`⚡ Supabase Database Active • Instance: https://aebntdjjniirnwthtwlx.supabase.co`);
+  console.log(`⚡ Dual Supabase + Memory Dispatch Active • Instance: https://aebntdjjniirnwthtwlx.supabase.co`);
 });

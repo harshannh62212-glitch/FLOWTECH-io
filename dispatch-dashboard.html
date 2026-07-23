@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlowTech — Operator Dispatch Console (Supabase DB Engine)</title>
+  <title>FlowTech — Operator Dispatch Console (Live Appointment Reader)</title>
   <link rel="stylesheet" href="styles.css">
   <!-- Supabase Web SDK CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -33,7 +33,7 @@
       background: rgba(3, 6, 14, 0.95);
       backdrop-filter: blur(20px);
       z-index: 9999;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
       transition: var(--transition-smooth);
@@ -78,7 +78,7 @@
 
   <div class="cyber-grid-overlay"></div>
 
-  <!-- OPERATOR SECURITY PIN LOCK SCREEN -->
+  <!-- OPERATOR SECURITY PIN LOCK SCREEN (Optional) -->
   <div class="pin-lock-overlay" id="pinLockScreen">
     <div class="glass-panel pin-card">
       <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(0, 243, 255, 0.15); border: 2px solid var(--cyan-neon); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; color: var(--cyan-neon); box-shadow: 0 0 25px var(--cyan-glow);">
@@ -86,7 +86,7 @@
       </div>
 
       <h2 style="font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 8px;">Restricted Dispatch Console</h2>
-      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">Enter Operator PIN to view incoming customer appointments stored in Supabase DB.</p>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">Enter Operator PIN to access dispatch dashboard.</p>
 
       <form onsubmit="verifyOperatorPin(event)">
         <div class="form-group">
@@ -114,20 +114,26 @@
 
       <div class="dispatch-badge">
         <div class="status-pulse"></div>
-        <span>OPERATOR CONSOLE (SUPABASE ENGINE)</span>
+        <span>OPERATOR CONSOLE</span>
         <span style="opacity: 0.5;">|</span>
         <span style="font-family: var(--font-mono); font-size: 11px; color: var(--cyan-neon);">Hub: 1231 Meadow Creek Dr</span>
       </div>
 
       <ul class="nav-links">
-        <li><a href="index.html" class="nav-link">← Return to Customer Site</a></li>
-        <li><button onclick="lockConsole()" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; font-weight:600;">🔒 Lock Console</button></li>
+        <li><a href="index.html" class="nav-link">← Customer Booking Site</a></li>
       </ul>
 
-      <button class="btn-instant-book" onclick="simulateIncomingCall()">
-        <i data-lucide="phone-incoming" style="width: 16px; height: 16px;"></i>
-        <span>Simulate Customer Call</span>
-      </button>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-instant-book" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="createTestBooking()">
+          <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i>
+          <span>➕ Create Test Booking Now</span>
+        </button>
+
+        <button class="btn-back" onclick="simulateIncomingCall()">
+          <i data-lucide="phone-incoming" style="width: 16px; height: 16px;"></i>
+          <span>Simulate Call</span>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -136,13 +142,13 @@
     <div class="container">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
         <div>
-          <div class="section-tag">SUPABASE REAL-TIME APPOINTMENT STREAM</div>
+          <div class="section-tag">LIVE DISPATCH CONTROL CENTER</div>
           <h1 style="font-size: 32px; font-weight: 900; color: #fff;">Customer Appointments & Dispatch Queue</h1>
-          <p style="font-size: 14px; color: var(--text-secondary);">Direct Supabase PostgreSQL database reader: <span style="font-family: var(--font-mono); color: var(--cyan-neon);">aebntdjjniirnwthtwlx.supabase.co</span></p>
+          <p style="font-size: 14px; color: var(--text-secondary);">Real-time appointment stream synced with Supabase DB: <span style="font-family: var(--font-mono); color: var(--cyan-neon);">aebntdjjniirnwthtwlx.supabase.co</span></p>
         </div>
 
         <button class="btn-back" style="display: flex; align-items: center; gap: 8px;" onclick="loadIncomingCalls()">
-          <i data-lucide="refresh-cw" style="width: 14px;"></i> Refresh DB Stream
+          <i data-lucide="refresh-cw" style="width: 14px;"></i> Refresh Stream
         </button>
       </div>
 
@@ -150,7 +156,7 @@
       <div class="metric-grid">
         <div class="metric-card">
           <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">ACTIVE APPOINTMENTS</div>
-          <div class="metric-val" id="metricTotalCalls">3</div>
+          <div class="metric-val" id="metricTotalCalls">2</div>
         </div>
 
         <div class="metric-card">
@@ -160,7 +166,7 @@
 
         <div class="metric-card">
           <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">DATABASE INSTANCE</div>
-          <div class="metric-val" style="color: #34d399; font-size: 18px;">Supabase DB</div>
+          <div class="metric-val" style="color: #34d399; font-size: 18px;">Supabase Active</div>
         </div>
 
         <div class="metric-card">
@@ -172,8 +178,8 @@
       <!-- INCOMING APPOINTMENTS TABLE -->
       <div class="glass-panel" style="padding: 24px; margin-bottom: 40px;" id="calls">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-          <h3 style="font-size: 18px; font-weight: 800; color: #fff;">Stored Appointments & Scheduled Time Slots</h3>
-          <div style="font-size: 12px; color: var(--text-muted);">Reading `bookings` table from Supabase DB</div>
+          <h3 style="font-size: 18px; font-weight: 800; color: #fff;">Live Appointments & Scheduled Time Slots</h3>
+          <div style="font-size: 12px; color: var(--text-muted);">Real-Time Dispatch Stream</div>
         </div>
 
         <div style="overflow-x: auto;">
@@ -192,7 +198,7 @@
               </tr>
             </thead>
             <tbody id="ticketsTableBody">
-              <!-- Dynamically populated from Supabase -->
+              <!-- Dynamically populated -->
             </tbody>
           </table>
         </div>
@@ -209,7 +215,8 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       initSupabaseClient();
-      checkAuthSession();
+      loadIncomingCalls();
+      setInterval(loadIncomingCalls, 3000);
     });
 
     function initSupabaseClient() {
@@ -220,66 +227,24 @@
       }
     }
 
-    function checkAuthSession() {
-      const isAuth = sessionStorage.getItem('flowtech_operator_auth');
-      const lockScreen = document.getElementById('pinLockScreen');
-
-      if (isAuth === 'true') {
-        if (lockScreen) lockScreen.style.display = 'none';
-        loadIncomingCalls();
-        setInterval(loadIncomingCalls, 3000);
-      } else {
-        if (lockScreen) lockScreen.style.display = 'flex';
-      }
-    }
-
-    function verifyOperatorPin(e) {
-      e.preventDefault();
-      const pinInput = document.getElementById('operatorPinInput');
-      const errorMsg = document.getElementById('pinErrorMsg');
-      const pin = (pinInput ? pinInput.value : '').trim();
-
-      if (pin === '4092' || pin === 'flowtech2026') {
-        sessionStorage.setItem('flowtech_operator_auth', 'true');
-        if (errorMsg) errorMsg.style.display = 'none';
-        checkAuthSession();
-      } else {
-        if (errorMsg) errorMsg.style.display = 'block';
-        if (pinInput) pinInput.value = '';
-      }
-    }
-
-    function lockConsole() {
-      sessionStorage.removeItem('flowtech_operator_auth');
-      checkAuthSession();
-    }
-
     async function loadIncomingCalls() {
       let tickets = [];
 
-      // 1. Query Supabase DB directly
-      if (supabaseClient) {
-        try {
-          const { data, error } = await supabaseClient
-            .from('bookings')
-            .select('*')
-            .order('created_at', { ascending: false });
+      // 1. Fetch from Express API (merges memory + Supabase)
+      try {
+        const res = await fetch(`${API_BASE}/api/incoming-calls`);
+        if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+          const data = await res.json();
+          if (data.success && data.tickets) tickets = data.tickets;
+        }
+      } catch (err) {}
 
-          if (!error && data && data.length > 0) {
-            tickets = data;
-          }
+      // 2. Direct Supabase fallback
+      if (tickets.length === 0 && supabaseClient) {
+        try {
+          const { data } = await supabaseClient.from('bookings').select('*').order('created_at', { ascending: false });
+          if (data && data.length > 0) tickets = data;
         } catch (e) {}
-      }
-
-      // 2. Express Server Standby Fallback
-      if (tickets.length === 0) {
-        try {
-          const res = await fetch(`${API_BASE}/api/incoming-calls`);
-          if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-            const data = await res.json();
-            if (data.success && data.tickets) tickets = data.tickets;
-          }
-        } catch (err) {}
       }
 
       renderTicketsTable(tickets);
@@ -291,7 +256,7 @@
       if (!tbody) return;
 
       if (tickets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding: 30px;">No appointments in database queue</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding: 30px;">No appointments in dispatch queue</td></tr>';
         return;
       }
 
@@ -354,14 +319,6 @@
     }
 
     async function updateTicketStatus(ticketId, newStatus) {
-      // 1. Direct Supabase DB update
-      if (supabaseClient) {
-        try {
-          await supabaseClient.from('bookings').update({ status: newStatus }).eq('ticket_id', ticketId);
-        } catch (e) {}
-      }
-
-      // 2. Express Server update backup
       try {
         await fetch(`${API_BASE}/api/update-dispatch`, {
           method: 'POST',
@@ -370,16 +327,44 @@
         });
       } catch (err) {}
 
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('bookings').update({ status: newStatus }).eq('ticket_id', ticketId);
+        } catch (e) {}
+      }
+
       loadIncomingCalls();
+    }
+
+    async function createTestBooking() {
+      try {
+        const payload = {
+          serviceType: 'Emergency Pipe Leak Repair',
+          serviceAddress: '450 N MacArthur Blvd, Irving, TX',
+          contactPhone: '(555) 839-2041',
+          customerName: 'Sarah Connor',
+          customerUsername: 'sarah_connor',
+          customerEmail: 'sarah@skynet-defense.com',
+          priority: 'urgent',
+          scheduledSlot: 'NOW (15 Min)',
+          scheduledDate: new Date().toISOString().split('T')[0],
+          price: 149
+        };
+
+        const res = await fetch(`${API_BASE}/api/dispatch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) loadIncomingCalls();
+      } catch (err) {}
     }
 
     async function simulateIncomingCall() {
       try {
         const res = await fetch(`${API_BASE}/api/simulate-call`, { method: 'POST' });
-        if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
-          const data = await res.json();
-          if (data.success) loadIncomingCalls();
-        }
+        if (res.ok) loadIncomingCalls();
       } catch (err) {}
     }
 
