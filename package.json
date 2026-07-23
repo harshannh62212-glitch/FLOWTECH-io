@@ -1,0 +1,27 @@
+{
+  "name": "flowtech-plumbing",
+  "version": "1.0.0",
+  "description": "FlowTech 24/7 Smart Plumbing Booking Engine & Dispatch Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo 'Frontend ready for Vercel deployment'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
+  },
+  "keywords": [
+    "plumbing",
+    "dispatch",
+    "glassmorphism",
+    "render",
+    "supabase",
+    "vercel"
+  ],
+  "author": "FlowTech",
+  "license": "MIT"
+}

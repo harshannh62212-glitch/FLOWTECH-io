@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: flowtech-backend
+    env: node
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DISPATCH_HUB_ADDRESS
+        value: 1231 Meadow Creek Dr
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false

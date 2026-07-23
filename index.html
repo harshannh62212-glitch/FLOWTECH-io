@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowTech — Modern Smart Plumbing & 24/7 Instant Dispatch</title>
+  <meta name="description" content="Next-generation smart plumbing booking platform with GPS distance calculation, address autocomplete, and 15-minute emergency dispatch from 1231 Meadow Creek Dr.">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Cyber Grid Background Accent -->
+  <div class="cyber-grid-overlay"></div>
+
+  <!-- TOP NAVBAR -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <!-- Minimalist Logo -->
+      <a href="#" class="logo-brand">
+        <div class="logo-icon">
+          <i data-lucide="droplets"></i>
+        </div>
+        <div class="logo-text">FLOW<span>TECH</span></div>
+      </a>
+
+      <!-- Dispatch Badge showing 1231 Meadow Creek Dr Hub -->
+      <div class="dispatch-badge">
+        <div class="status-pulse"></div>
+        <span>24/7 Dispatch Ready</span>
+        <span style="opacity: 0.5;">|</span>
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--cyan-neon);" id="navHubLabel">Hub: 1231 Meadow Creek Dr</span>
+      </div>
+
+      <!-- Nav Links -->
+      <ul class="nav-links">
+        <li><a href="#booking" class="nav-link">Book Online</a></li>
+        <li><a href="#diagnostics" class="nav-link">AI Diagnostics</a></li>
+        <li><a href="#tracker" class="nav-link">Live Tracker</a></li>
+        <li><a href="#architecture" class="nav-link">Cloud Stack</a></li>
+      </ul>
+
+      <!-- High-Contrast Instant Book Button -->
+      <button class="btn-instant-book" id="openModalBtn">
+        <i data-lucide="zap" style="width: 16px; height: 16px;"></i>
+        <span>Instant Book</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero-section" id="hero">
+    <div class="container">
+      <div class="hero-grid">
+        
+        <!-- LEFT: 3D Isometric Graphic & Telemetry -->
+        <div class="hero-visual-wrapper">
+          <div class="hero-badge-tag">
+            <i data-lucide="navigation-2" style="width: 14px; height: 14px;"></i>
+            <span>ACCURATE GPS TELEMETRY & AUTOCOMPLETE ACTIVE</span>
+          </div>
+          <h1 class="hero-title">Precision Plumbing. Instant AI Dispatch.</h1>
+          <p class="hero-desc">
+            Experience the future of residential & commercial plumbing. Accurate GPS distance tracking, predictive address autocomplete, and master technicians dispatched directly from our central hub at <strong>1231 Meadow Creek Dr</strong>.
+          </p>
+
+          <!-- 3D Isometric Image Display with Floating Glass Telemetry Overlay -->
+          <div class="hero-3d-card">
+            <img src="assets/hero-sensors.png" alt="Smart Plumbing Diagnosis Sensors 3D Isometric Render" class="hero-3d-img">
+            
+            <!-- Live Telemetry Overlay Node 1 -->
+            <div class="telemetry-node node-1">
+              <div class="telemetry-icon">
+                <i data-lucide="activity" style="width: 18px; height: 18px;"></i>
+              </div>
+              <div>
+                <div class="telemetry-label">MAIN PIPE PRESSURE</div>
+                <div class="telemetry-val" id="pressureReadout">58.4 PSI (STABLE)</div>
+              </div>
+            </div>
+
+            <!-- Live Telemetry Overlay Node 2 -->
+            <div class="telemetry-node node-2">
+              <div class="telemetry-icon" style="color: var(--success); background: rgba(16, 185, 129, 0.15);">
+                <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+              </div>
+              <div>
+                <div class="telemetry-label">GPS HAVERSINE ENGINE</div>
+                <div class="telemetry-val" style="color: #34d399;">1231 MEADOW CREEK DR</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: 3-STEP INTERACTIVE BOOKING CARD -->
+        <div class="glass-panel booking-card" id="booking">
+          <div class="booking-card-header">
+            <div class="booking-card-title">
+              <span>Emergency or Scheduled Repair</span>
+              <i data-lucide="shield" style="color: var(--cyan-neon); width: 20px;"></i>
+            </div>
+            <div class="booking-card-subtitle">GPS drive time calculated from 1231 Meadow Creek Dr</div>
+          </div>
+
+          <!-- Step Progress Indicator -->
+          <div class="step-progress">
+            <div class="step-progress-fill" id="progressFill"></div>
+            
+            <div class="step-item active" id="stepIndicator1" onclick="goToStep(1)">
+              <div class="step-number">1</div>
+              <span class="step-title">Issue</span>
+            </div>
+
+            <div class="step-item" id="stepIndicator2" onclick="goToStep(2)">
+              <div class="step-number">2</div>
+              <span class="step-title">Schedule</span>
+            </div>
+
+            <div class="step-item" id="stepIndicator3" onclick="goToStep(3)">
+              <div class="step-number">3</div>
+              <span class="step-title">Estimate</span>
+            </div>
+          </div>
+
+          <!-- STEP 1: SERVICE TYPE RADIO CARDS -->
+          <div class="step-content active" id="step1">
+            <div class="form-label">Select Required Service</div>
+            <div class="service-options-grid">
+              
+              <div class="radio-card selected" onclick="selectService(this, 'leak', 149)">
+                <div class="radio-card-header">
+                  <span class="radio-icon">⚡</span>
+                  <div class="custom-radio"></div>
+                </div>
+                <div class="radio-label">Emergency Pipe Leak</div>
+                <div class="radio-subtext">Active burst, water shutoff & acoustic scan</div>
+              </div>
+
+              <div class="radio-card" onclick="selectService(this, 'drain', 129)">
+                <div class="radio-card-header">
+                  <span class="radio-icon">🌊</span>
+                  <div class="custom-radio"></div>
+                </div>
+                <div class="radio-label">Ultrasonic Drain Clear</div>
+                <div class="radio-subtext">Clog elimination & HD camera inspection</div>
+              </div>
+
+              <div class="radio-card" onclick="selectService(this, 'heater', 189)">
+                <div class="radio-card-header">
+                  <span class="radio-icon">🔥</span>
+                  <div class="custom-radio"></div>
+                </div>
+                <div class="radio-label">Smart Water Heater</div>
+                <div class="radio-subtext">Tankless retrofit, thermostat & pump check</div>
+              </div>
+
+              <div class="radio-card" onclick="selectService(this, 'audit', 99)">
+                <div class="radio-card-header">
+                  <span class="radio-icon">🔍</span>
+                  <div class="custom-radio"></div>
+                </div>
+                <div class="radio-label">Full Home Plumbing Audit</div>
+                <div class="radio-subtext">IoT sensor scan & pressure calibration</div>
+              </div>
+
+            </div>
+
+            <div class="form-nav-btns">
+              <button class="btn-next" onclick="nextStep(1)">Continue to Schedule →</button>
+            </div>
+          </div>
+
+          <!-- STEP 2: SCHEDULE & PRIORITY -->
+          <div class="step-content" id="step2">
+            <div class="form-label">Priority Dispatch Mode</div>
+            <div class="priority-toggle">
+              <div class="p-btn active" id="prioUrgent" onclick="setPriority('urgent')">
+                <i data-lucide="zap" style="width: 14px; margin-right: 4px;"></i> 15-Min Emergency
+              </div>
+              <div class="p-btn" id="prioScheduled" onclick="setPriority('scheduled')">
+                <i data-lucide="calendar" style="width: 14px; margin-right: 4px;"></i> Scheduled Appointment
+              </div>
+            </div>
+
+            <div class="form-group" id="datePickerGroup" style="display: none;">
+              <label class="form-label">Select Preferred Date</label>
+              <input type="date" class="form-input" id="bookingDate" value="2026-07-24">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Available Arrival Slots</label>
+              <div class="time-slots">
+                <div class="slot-btn selected" onclick="selectSlot(this)">NOW (15 Min)</div>
+                <div class="slot-btn" onclick="selectSlot(this)">04:00 PM</div>
+                <div class="slot-btn" onclick="selectSlot(this)">06:30 PM</div>
+                <div class="slot-btn" onclick="selectSlot(this)">Tomorrow 9AM</div>
+                <div class="slot-btn" onclick="selectSlot(this)">Tomorrow 1PM</div>
+                <div class="slot-btn" onclick="selectSlot(this)">Tomorrow 4PM</div>
+              </div>
+            </div>
+
+            <div class="form-nav-btns">
+              <button class="btn-back" onclick="goToStep(1)">← Back</button>
+              <button class="btn-next" onclick="nextStep(2)">Get Instant Estimate →</button>
+            </div>
+          </div>
+
+          <!-- STEP 3: ESTIMATE & ADDRESS AUTOCOMPLETE / GPS CALCULATOR -->
+          <div class="step-content" id="step3">
+            <div class="form-group" style="position: relative;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <label class="form-label" style="margin-bottom: 0;">Service Address</label>
+                <button type="button" class="btn-gps-detect" onclick="requestUserGpsLocation()">
+                  <i data-lucide="crosshair" style="width: 12px; height: 12px;"></i> Use Current GPS
+                </button>
+              </div>
+
+              <!-- Input with live predictive autocomplete -->
+              <input type="text" class="form-input" placeholder="Type street address (e.g. 450 MacArthur Blvd)" id="serviceAddress" value="450 MacArthur Blvd, Irving, TX" autocomplete="off" oninput="handleAddressInput(this.value)" onfocus="handleAddressInput(this.value)">
+              
+              <!-- Predictive Autocomplete Glass Dropdown Container -->
+              <div class="autocomplete-dropdown glass-panel" id="addressSuggestions"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Contact Mobile Number</label>
+              <input type="tel" class="form-input" placeholder="(555) 000-0000" id="contactPhone" value="(555) 839-2041">
+            </div>
+
+            <!-- Dynamic Location & Prep Time Breakdown Pill -->
+            <div class="location-eta-card">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--cyan-neon); text-transform: uppercase;">
+                  <i data-lucide="navigation" style="width: 12px; height: 12px; margin-right: 4px;"></i>
+                  HUB ORIGIN: 1231 MEADOW CREEK DR
+                </div>
+                <div style="font-size: 11px; font-family: var(--font-mono); color: #a7f3d0;" id="distReadout">3.1 Miles</div>
+              </div>
+
+              <!-- Prep Time vs Drive Time Breakdown -->
+              <div class="eta-breakdown-row">
+                <div class="eta-box">
+                  <span class="eta-lbl">TECH PREP TIME</span>
+                  <span class="eta-val" id="prepTimeVal">4 Mins</span>
+                </div>
+                <div class="eta-plus">+</div>
+                <div class="eta-box">
+                  <span class="eta-lbl">GPS DRIVE TIME</span>
+                  <span class="eta-val" id="driveTimeVal">8 Mins</span>
+                </div>
+                <div class="eta-equals">=</div>
+                <div class="eta-box highlight">
+                  <span class="eta-lbl">TOTAL ETA</span>
+                  <span class="eta-val" id="totalEtaVal">12 Mins</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Instant Computed Estimate Pill -->
+            <div class="estimate-pill-box">
+              <div>
+                <div class="est-title">GUARANTEED UPFRONT ESTIMATE</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Includes prep, travel & 1-yr warranty</div>
+              </div>
+              <div class="est-amount" id="computedEstimate">$149.00</div>
+            </div>
+
+            <div class="form-nav-btns">
+              <button class="btn-back" onclick="goToStep(2)">← Back</button>
+              <button class="btn-next" onclick="submitBooking()" style="background: linear-gradient(135deg, var(--success), #059669); color: #fff;">
+                <i data-lucide="check-circle" style="width: 18px; margin-right: 6px;"></i> Confirm & Dispatch Now
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOUD ARCHITECTURE SECTION -->
+  <section class="container" id="architecture" style="padding: 60px 24px;">
+    <div class="section-header">
+      <div class="section-tag">PRODUCTION DEPLOYMENT ARCHITECTURE</div>
+      <h2 class="section-title">Vercel + Render + Supabase Cloud Stack</h2>
+      <p class="section-desc">Live production web platform deployed to <strong>flowtech-io.vercel.app</strong>.</p>
+    </div>
+
+    <div class="arch-cards-grid">
+      <!-- Vercel Card -->
+      <div class="glass-panel arch-card">
+        <div class="arch-icon-box" style="border-color: #fff; color: #fff;">
+          <i data-lucide="triangle" style="transform: rotate(0deg);"></i>
+        </div>
+        <h3 style="font-size: 20px; font-weight: 800; color: #fff;">Vercel Edge CDN</h3>
+        <p style="font-size: 13px; color: var(--text-secondary);">Production URL: <span style="font-family: var(--font-mono); color: var(--cyan-neon);">flowtech-io.vercel.app</span></p>
+        <div class="arch-badge cyan">flowtech-io.vercel.app</div>
+      </div>
+
+      <!-- Render Card -->
+      <div class="glass-panel arch-card">
+        <div class="arch-icon-box" style="border-color: var(--cyan-neon); color: var(--cyan-neon);">
+          <i data-lucide="server"></i>
+        </div>
+        <h3 style="font-size: 20px; font-weight: 800; color: #fff;">Render Express API</h3>
+        <p style="font-size: 13px; color: var(--text-secondary);">Haversine GPS Engine & location distance calculator from 1231 Meadow Creek Dr.</p>
+        <div class="arch-badge cyan" id="renderHealthBadge">Render Status: Active</div>
+      </div>
+
+      <!-- Supabase Card -->
+      <div class="glass-panel arch-card">
+        <div class="arch-icon-box" style="border-color: var(--success); color: var(--success);">
+          <i data-lucide="database"></i>
+        </div>
+        <h3 style="font-size: 20px; font-weight: 800; color: #fff;">Supabase PostgreSQL</h3>
+        <p style="font-size: 13px; color: var(--text-secondary);">Relational DB storing dispatch tickets, technician GPS coordinates, and telemetry.</p>
+        <div class="arch-badge green">PostgreSQL • RLS</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI DIAGNOSTIC SIMULATOR SECTION -->
+  <section class="diag-section" id="diagnostics">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">AI ACOUSTIC SENSING</div>
+        <h2 class="section-title">Instant Smart Diagnostic Engine</h2>
+        <p class="section-desc">Select a symptom below to run an acoustic frequency simulation and generate an instant AI repair analysis.</p>
+      </div>
+
+      <div class="diag-grid">
+        <!-- Symptom Selector Buttons -->
+        <div class="symptom-selector">
+          <button class="symptom-btn active" onclick="runDiagnostic('leak', this)">
+            <div class="symptom-info">
+              <i data-lucide="droplet" style="color: var(--cyan-neon);"></i>
+              <div>
+                <div class="symptom-title">Hissing or Dripping Behind Drywall</div>
+                <div class="symptom-desc">High-frequency acoustic leak anomaly</div>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" style="color: var(--text-muted);"></i>
+          </button>
+
+          <button class="symptom-btn" onclick="runDiagnostic('clog', this)">
+            <div class="symptom-info">
+              <i data-lucide="waves" style="color: var(--indigo-primary);"></i>
+              <div>
+                <div class="symptom-title">Slow Drain & Gurgling Sounds</div>
+                <div class="symptom-desc">Main line pressure build-up detected</div>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" style="color: var(--text-muted);"></i>
+          </button>
+
+          <button class="symptom-btn" onclick="runDiagnostic('pressure', this)">
+            <div class="symptom-info">
+              <i data-lucide="gauge" style="color: var(--warning);"></i>
+              <div>
+                <div class="symptom-title">Sudden Low Water Pressure</div>
+                <div class="symptom-desc">Pressure Regulator Valve failure</div>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" style="color: var(--text-muted);"></i>
+          </button>
+        </div>
+
+        <!-- AI Output Card -->
+        <div class="glass-panel diag-output-card">
+          <div class="diag-header">
+            <div>
+              <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">ACOUSTIC SPECTRUM ANALYSIS</div>
+              <div style="font-size: 18px; font-weight: 800; color: #fff;" id="diagResultTitle">Micro-Crack Pressure Leak</div>
+            </div>
+            <div style="padding: 4px 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 50px; color: #f87171; font-size: 12px; font-weight: 700;" id="diagSeverity">
+              SEVERITY: HIGH
+            </div>
+          </div>
+
+          <!-- Animated Audio Waveform -->
+          <div class="waveform-box">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+          </div>
+
+          <div class="diag-stat-row">
+            <div class="diag-stat">
+              <div class="diag-stat-lbl">FREQUENCY PITCH</div>
+              <div class="diag-stat-val" id="diagFreq">14.2 kHz</div>
+            </div>
+            <div class="diag-stat">
+              <div class="diag-stat-lbl">ESTIMATED WATER LOSS</div>
+              <div class="diag-stat-val" id="diagLoss">1.4 Gal / hr</div>
+            </div>
+          </div>
+
+          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;" id="diagRecommendation">
+            Recommended Action: Immediate ultrasonic hydro-isolation scan required to pinpoint pipe fracture without cutting drywall.
+          </p>
+
+          <button class="btn-instant-book" style="width: 100%; justify-content: center;" onclick="bookForDiagnostic()">
+            Dispatch Tech from 1231 Meadow Creek Dr ($149 Flat Fee)
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE FLEET TRACKER SECTION -->
+  <section class="tracker-section" id="tracker">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">LIVE GPS DISPATCH ENGINE</div>
+        <h2 class="section-title">Technicians Dispatched From Meadow Creek Hub</h2>
+        <p class="section-desc">Track real-time tech location data with prep buffer and drive time metrics.</p>
+      </div>
+
+      <div class="tracker-grid">
+        <!-- Dark Glass Map Mockup -->
+        <div class="map-mockup">
+          <!-- Hub Origin Marker -->
+          <div class="map-pin-tech" style="top: 25%; left: 30%; border-color: #f59e0b; background: rgba(245, 158, 11, 0.15);">
+            <div class="tech-avatar" style="background: #f59e0b; color: #000;">HUB</div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #fff;">1231 Meadow Creek Dr</div>
+              <div style="font-size: 10px; color: #fcd34d; font-family: var(--font-mono);">DISPATCH ORIGIN</div>
+            </div>
+          </div>
+
+          <!-- Active Tech Marker -->
+          <div class="map-pin-tech" style="top: 45%; left: 55%;">
+            <div class="tech-avatar">A</div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #fff;">Alex M. (Master Tech)</div>
+              <div style="font-size: 10px; color: var(--cyan-neon); font-family: var(--font-mono);">ETA: 12 MINS (4m prep + 8m drive)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tech Info Spotlight Card -->
+        <div class="glass-panel tech-info-card">
+          <div class="tech-profile">
+            <div class="tech-img-box">
+              <img src="assets/tech-app.png" alt="Plumbing Technician UI Badge">
+            </div>
+            <div>
+              <div style="font-size: 18px; font-weight: 800; color: #fff;">Alex Martinez</div>
+              <div style="font-size: 12px; color: var(--cyan-neon); font-weight: 600;">Master Plumbing Specialist #4092</div>
+              <div style="font-size: 11px; color: var(--text-muted);">⭐ 4.98 (412 Reviews) • 12 Yrs Exp</div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+              <span>Dispatch Base:</span>
+              <span style="color: #fff; font-weight: 600;">1231 Meadow Creek Dr</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+              <span>Prep Time Buffer:</span>
+              <span style="color: var(--cyan-neon); font-family: var(--font-mono);">4 Minutes</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>Status:</span>
+              <span style="color: var(--success); font-weight: 700;">🟢 En Route to Destination</span>
+            </div>
+          </div>
+
+          <button class="btn-next" style="width: 100%; text-align: center;" onclick="goToStep(1)">
+            Request Nearest Tech Now
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOKING CONFIRMATION MODAL -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="glass-panel modal-card">
+      <button class="modal-close" id="closeModalBtn">&times;</button>
+      
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(16, 185, 129, 0.2); border: 2px solid var(--success); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: var(--success); box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);">
+          <i data-lucide="check" style="width: 28px; height: 28px;"></i>
+        </div>
+        <h3 style="font-size: 24px; font-weight: 800; color: #fff;">Technician Dispatched!</h3>
+        <p style="font-size: 13px; color: var(--text-secondary);">Ticket <span style="font-family: var(--font-mono); color: var(--cyan-neon);" id="ticketId">#FLW-92041</span> saved to Supabase.</p>
+      </div>
+
+      <div style="background: rgba(6, 9, 19, 0.6); padding: 16px; border-radius: var(--border-radius-md); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 24px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--text-secondary);">Dispatch Hub:</span>
+          <span style="font-weight: 700; color: #fff;">1231 Meadow Creek Dr</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--text-secondary);">Service:</span>
+          <span style="font-weight: 700; color: #fff;" id="modalServiceType">Emergency Pipe Leak Repair</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="color: var(--text-secondary);">Estimated Arrival:</span>
+          <span style="font-weight: 700; color: var(--cyan-neon);" id="modalEta">12 Mins (4m prep + 8m drive)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="color: var(--text-secondary);">Guaranteed Total:</span>
+          <span style="font-weight: 800; color: #fff;" id="modalPrice">$149.00</span>
+        </div>
+      </div>
+
+      <button class="btn-next" style="width: 100%; text-align: center;" onclick="closeModal()">
+        Track Live GPS →
+      </button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="logo-brand" style="margin-bottom: 16px;">
+            <div class="logo-icon"><i data-lucide="droplets"></i></div>
+            <div class="logo-text">FLOW<span>TECH</span></div>
+          </div>
+          <p style="font-size: 13px; color: var(--text-secondary); max-width: 320px;">
+            Central Dispatch Hub: 1231 Meadow Creek Dr. Live URL: flowtech-io.vercel.app. Powered by Vercel, Render Express API, and Supabase PostgreSQL.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">Production Stack</h4>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-secondary);">
+            <li>flowtech-io.vercel.app</li>
+            <li>Render Express Node API</li>
+            <li>Supabase Database & Auth</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">Dispatch Hub</h4>
+          <div style="font-size: 13px; color: var(--cyan-neon); font-family: var(--font-mono);">
+            1231 Meadow Creek Dr<br>Irving, TX 75038
+          </div>
+        </div>
+
+        <div>
+          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">Emergency Call</h4>
+          <div style="font-size: 20px; font-weight: 800; font-family: var(--font-mono); color: var(--cyan-neon); margin-bottom: 8px;">
+            1-800-FLOW-TECH
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        © 2026 FlowTech Inc. Central Hub: 1231 Meadow Creek Dr. Vercel deployment target: flowtech-io.vercel.app.
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
