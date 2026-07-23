@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlowTech — 24/7 Live Operator Dispatch Console</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .operator-header {
+      padding: 120px 0 30px 0;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .metric-card {
+      padding: 20px;
+      background: rgba(13, 19, 36, 0.8);
+      border: 1px solid var(--cyan-border);
+      border-radius: var(--border-radius-md);
+    }
+    .metric-val {
+      font-size: 28px;
+      font-weight: 900;
+      font-family: var(--font-mono);
+      color: var(--cyan-neon);
+    }
+    .tickets-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      color: #fff;
+    }
+    .tickets-table th {
+      background: rgba(0, 243, 255, 0.08);
+      color: var(--cyan-neon);
+      text-align: left;
+      padding: 14px 16px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--cyan-border);
+    }
+    .tickets-table td {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .tickets-table tr:hover td {
+      background: rgba(0, 243, 255, 0.04);
+    }
+    .badge-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 50px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge-dispatched { background: rgba(0, 243, 255, 0.15); color: var(--cyan-neon); border: 1px solid var(--cyan-border); }
+    .badge-en_route { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid #f59e0b; }
+    .badge-completed { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid var(--success); }
+    .select-status {
+      background: rgba(6, 9, 19, 0.8);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cyber-grid-overlay"></div>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="logo-brand">
+        <div class="logo-icon"><i data-lucide="droplets"></i></div>
+        <div class="logo-text">FLOW<span>TECH</span></div>
+      </a>
+
+      <div class="dispatch-badge">
+        <div class="status-pulse"></div>
+        <span>OPERATOR CONSOLE LIVE</span>
+        <span style="opacity: 0.5;">|</span>
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--cyan-neon);">Hub: 1231 Meadow Creek Dr</span>
+      </div>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">← Public Site</a></li>
+        <li><a href="#calls" class="nav-link">Incoming Calls</a></li>
+        <li><a href="#technicians" class="nav-link">Fleet Roster</a></li>
+      </ul>
+
+      <button class="btn-instant-book" onclick="simulateIncomingCall()">
+        <i data-lucide="phone-incoming" style="width: 16px; height: 16px;"></i>
+        <span>Simulate Incoming Call</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- OPERATOR HEADER -->
+  <section class="operator-header">
+    <div class="container">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+        <div>
+          <div class="section-tag">SUPABASE REAL-TIME DISPATCH ENGINE</div>
+          <h1 style="font-size: 32px; font-weight: 900; color: #fff;">Incoming Calls & Dispatch Control</h1>
+          <p style="font-size: 14px; color: var(--text-secondary);">Real-time stream connected to Supabase Instance: <span style="font-family: var(--font-mono); color: var(--cyan-neon);">aebntdjjniirnwthtwlx.supabase.co</span></p>
+        </div>
+
+        <button class="btn-back" style="display: flex; align-items: center; gap: 8px;" onclick="loadIncomingCalls()">
+          <i data-lucide="refresh-cw" style="width: 14px;"></i> Refresh Stream
+        </button>
+      </div>
+
+      <!-- METRICS BAR -->
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">ACTIVE INCOMING CALLS</div>
+          <div class="metric-val" id="metricTotalCalls">3</div>
+        </div>
+
+        <div class="metric-card">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">DISPATCHED / EN ROUTE</div>
+          <div class="metric-val" style="color: #fcd34d;" id="metricActiveEnRoute">2</div>
+        </div>
+
+        <div class="metric-card">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">AVG ARRIVAL ETA</div>
+          <div class="metric-val" style="color: #34d399;" id="metricAvgEta">14 MINS</div>
+        </div>
+
+        <div class="metric-card">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">CENTRAL DISPATCH HUB</div>
+          <div style="font-size: 14px; font-weight: 700; color: var(--cyan-neon); margin-top: 4px;">1231 Meadow Creek Dr</div>
+        </div>
+      </div>
+
+      <!-- INCOMING CALLS TABLE -->
+      <div class="glass-panel" style="padding: 24px; margin-bottom: 40px;" id="calls">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <h3 style="font-size: 18px; font-weight: 800; color: #fff;">Incoming Customer Tickets & Call Queue</h3>
+          <div style="font-size: 12px; color: var(--text-muted);">Syncing with Supabase `bookings` table</div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="tickets-table">
+            <thead>
+              <tr>
+                <th>Ticket ID</th>
+                <th>Customer Contact & Destination</th>
+                <th>Issue / AI Diagnosis</th>
+                <th>ETA Breakdown (Prep + Drive)</th>
+                <th>Price Quote</th>
+                <th>Assigned Tech</th>
+                <th>Dispatch Status</th>
+                <th>Operator Action</th>
+              </tr>
+            </thead>
+            <tbody id="ticketsTableBody">
+              <!-- Dynamically populated via app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- FLEET STATUS GRID -->
+      <div class="glass-panel" style="padding: 24px;" id="technicians">
+        <h3 style="font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 16px;">Active Master Plumber Fleet Roster</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+          <div style="background: rgba(6,9,19,0.7); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+            <div style="font-size: 15px; font-weight: 800; color: #fff;">Alex Martinez (#FLW-4092)</div>
+            <div style="font-size: 12px; color: var(--cyan-neon);">Master Plumber • 12 Yrs Exp</div>
+            <div style="font-size: 12px; color: var(--success); margin-top: 8px;">🟢 En Route to 450 N MacArthur Blvd</div>
+          </div>
+
+          <div style="background: rgba(6,9,19,0.7); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+            <div style="font-size: 15px; font-weight: 800; color: #fff;">David Kim (#FLW-3108)</div>
+            <div style="font-size: 12px; color: var(--cyan-neon);">Senior Plumbing Tech • 8 Yrs Exp</div>
+            <div style="font-size: 12px; color: #fcd34d; margin-top: 8px;">🟡 Standby at 1231 Meadow Creek Dr Hub</div>
+          </div>
+
+          <div style="background: rgba(6,9,19,0.7); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+            <div style="font-size: 15px; font-weight: 800; color: #fff;">Sarah Jenkins (#FLW-5501)</div>
+            <div style="font-size: 12px; color: var(--cyan-neon);">Ultrasonic Specialist • 6 Yrs Exp</div>
+            <div style="font-size: 12px; color: var(--success); margin-top: 8px;">🟢 Available for Dispatch</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script style="display:none;">
+    const API_BASE = window.location.origin;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadIncomingCalls();
+      setInterval(loadIncomingCalls, 5000); // Live poll every 5s
+    });
+
+    async function loadIncomingCalls() {
+      try {
+        const res = await fetch(`${API_BASE}/api/incoming-calls`);
+        const data = await res.json();
+
+        if (data.success && data.tickets) {
+          renderTicketsTable(data.tickets);
+          updateMetrics(data.tickets);
+        }
+      } catch (err) {
+        console.warn('Error loading dispatch stream:', err);
+      }
+    }
+
+    function renderTicketsTable(tickets) {
+      const tbody = document.getElementById('ticketsTableBody');
+      if (!tbody) return;
+
+      if (tickets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No active calls in queue</td></tr>';
+        return;
+      }
+
+      let html = '';
+      tickets.forEach(ticket => {
+        const statusClass = ticket.status === 'completed' ? 'badge-completed' : ticket.status === 'en_route' ? 'badge-en_route' : 'badge-dispatched';
+        const prep = ticket.prep_time_mins || 4;
+        const drive = ticket.drive_time_mins || 10;
+        const total = ticket.total_eta_mins || (prep + drive);
+
+        html += `
+          <tr>
+            <td style="font-family: var(--font-mono); font-weight: 700; color: var(--cyan-neon);">${ticket.ticket_id}</td>
+            <td>
+              <div style="font-weight: 700; color: #fff;">${escapeHtml(ticket.service_address || '1231 Meadow Creek Dr Area')}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${ticket.contact_phone || '(555) 000-0000'}</div>
+            </td>
+            <td style="font-weight: 600;">${escapeHtml(ticket.service_type || 'Emergency Plumbing')}</td>
+            <td style="font-family: var(--font-mono); color: var(--cyan-neon);">${total} Mins (${prep}m prep + ${drive}m drive)</td>
+            <td style="font-family: var(--font-mono); font-weight: 800; color: #fff;">$${ticket.estimated_price || 149}</td>
+            <td>${escapeHtml(ticket.technician_name || 'Alex Martinez')}</td>
+            <td><span class="badge-status ${statusClass}">${(ticket.status || 'dispatched').toUpperCase()}</span></td>
+            <td>
+              <select class="select-status" onchange="updateTicketStatus('${ticket.ticket_id}', this.value)">
+                <option value="dispatched" ${ticket.status === 'dispatched' ? 'selected' : ''}>Dispatched</option>
+                <option value="en_route" ${ticket.status === 'en_route' ? 'selected' : ''}>En Route</option>
+                <option value="completed" ${ticket.status === 'completed' ? 'selected' : ''}>Completed</option>
+              </select>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function updateMetrics(tickets) {
+      document.getElementById('metricTotalCalls').textContent = tickets.length;
+      const active = tickets.filter(t => t.status !== 'completed').length;
+      document.getElementById('metricActiveEnRoute').textContent = active;
+    }
+
+    async function updateTicketStatus(ticketId, newStatus) {
+      try {
+        await fetch(`${API_BASE}/api/update-dispatch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ticketId: ticketId, status: newStatus })
+        });
+        loadIncomingCalls();
+      } catch (err) {}
+    }
+
+    async function simulateIncomingCall() {
+      try {
+        const res = await fetch(`${API_BASE}/api/simulate-call`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          loadIncomingCalls();
+        }
+      } catch (err) {}
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+  </script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

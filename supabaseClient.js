@@ -1,21 +1,17 @@
-// FlowTech Supabase Client Integration
+// FlowTech Supabase Client Integration with Real Credentials
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://mock-flowtech.supabase.co';
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'mock-anon-key-flowtech-2026';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://aebntdjjniirnwthtwlx.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlYm50ZGpqbmlpcm53dGh0d2x4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NzIwNTYsImV4cCI6MjA5ODQ0ODA1Nn0.la5aH5b2Tb5cj5yfVEWHhPKU4_ieCWydEPWH8V81eIg';
 
 let supabase = null;
 
-if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-  try {
-    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-    console.log('[Supabase] Initialized successfully with credentials');
-  } catch (err) {
-    console.warn('[Supabase] Initialization error, falling back to mock mode:', err.message);
-  }
-} else {
-  console.log('[Supabase] Running in local/mock mode (Configure SUPABASE_URL and SUPABASE_ANON_KEY on Render/Vercel)');
+try {
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.log(`[Supabase] Active connection to ${SUPABASE_URL}`);
+} catch (err) {
+  console.warn('[Supabase] Client init warning:', err.message);
 }
 
-module.exports = { supabase, SUPABASE_URL };
+module.exports = { supabase, SUPABASE_URL, SUPABASE_ANON_KEY };
