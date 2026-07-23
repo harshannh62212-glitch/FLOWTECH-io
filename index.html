@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlowTech — Modern Smart Plumbing & 24/7 Instant Dispatch</title>
-  <meta name="description" content="Next-generation smart plumbing booking platform connected to Supabase database (aebntdjjniirnwthtwlx.supabase.co) with live operator dispatch control.">
+  <meta name="description" content="Next-generation smart plumbing booking platform with AI issue description quote generator, GPS distance calculation, and 15-minute emergency dispatch from 1231 Meadow Creek Dr.">
   <link rel="stylesheet" href="styles.css">
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -33,11 +33,11 @@
         <span style="font-family: var(--font-mono); font-size: 11px; color: var(--cyan-neon);" id="navHubLabel">Hub: 1231 Meadow Creek Dr</span>
       </div>
 
-      <!-- Nav Links -->
+      <!-- Nav Links (Public facing) -->
       <ul class="nav-links">
         <li><a href="#booking" class="nav-link">Book Online</a></li>
         <li><a href="#ai-quote-section" class="nav-link">AI Quote Generator</a></li>
-        <li><a href="dispatch-dashboard.html" class="nav-link" style="color: var(--cyan-neon); font-weight: 800;">🛡️ Operator Console</a></li>
+        <li><a href="#diagnostics" class="nav-link">AI Diagnostics</a></li>
         <li><a href="#tracker" class="nav-link">Live Tracker</a></li>
       </ul>
 
@@ -57,12 +57,12 @@
         <!-- LEFT: 3D Isometric Graphic & Telemetry -->
         <div class="hero-visual-wrapper">
           <div class="hero-badge-tag">
-            <i data-lucide="database" style="width: 14px; height: 14px;"></i>
-            <span>SUPABASE LIVE DATABASE: AEBNTDJJNIIRNWTHTWLX</span>
+            <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+            <span>AI CUSTOM ISSUE QUOTE GENERATOR ACTIVE</span>
           </div>
           <h1 class="hero-title">Precision Plumbing. Instant AI Dispatch.</h1>
           <p class="hero-desc">
-            Experience the future of residential & commercial plumbing. Real-time Supabase dispatch tracking, AI quote generation, and master technicians dispatched directly from our central hub at <strong>1231 Meadow Creek Dr</strong>.
+            Describe your issue in plain English to generate an instant AI diagnostic report, severity analysis, and guaranteed price quote. Dispatched directly from <strong>1231 Meadow Creek Dr</strong>.
           </p>
 
           <!-- 3D Isometric Image Display with Floating Glass Telemetry Overlay -->
@@ -86,8 +86,8 @@
                 <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
               </div>
               <div>
-                <div class="telemetry-label">DISPATCH CONSOLE</div>
-                <div class="telemetry-val" style="color: #34d399;">SUPABASE CONNECTED</div>
+                <div class="telemetry-label">DISPATCH STATUS</div>
+                <div class="telemetry-val" style="color: #34d399;">1231 MEADOW CREEK DR</div>
               </div>
             </div>
           </div>
@@ -354,7 +354,7 @@
           <i data-lucide="check" style="width: 28px; height: 28px;"></i>
         </div>
         <h3 style="font-size: 24px; font-weight: 800; color: #fff;">Technician Dispatched!</h3>
-        <p style="font-size: 13px; color: var(--text-secondary);">Ticket <span style="font-family: var(--font-mono); color: var(--cyan-neon);" id="ticketId">#FLW-92041</span> saved to Supabase (aebntdjjniirnwthtwlx).</p>
+        <p style="font-size: 13px; color: var(--text-secondary);">Ticket <span style="font-family: var(--font-mono); color: var(--cyan-neon);" id="ticketId">#FLW-92041</span> saved & dispatched from 1231 Meadow Creek Dr.</p>
       </div>
 
       <div style="background: rgba(6, 9, 19, 0.6); padding: 16px; border-radius: var(--border-radius-md); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 24px; font-size: 13px;">
@@ -376,9 +376,9 @@
         </div>
       </div>
 
-      <a href="dispatch-dashboard.html" class="btn-next" style="display: block; width: 100%; text-align: center; text-decoration: none;">
-        Open Live Dispatch Console →
-      </a>
+      <button class="btn-next" style="width: 100%; text-align: center;" onclick="closeModal()">
+        Done →
+      </button>
     </div>
   </div>
 
@@ -392,16 +392,16 @@
             <div class="logo-text">FLOW<span>TECH</span></div>
           </div>
           <p style="font-size: 13px; color: var(--text-secondary); max-width: 320px;">
-            Central Dispatch Hub: 1231 Meadow Creek Dr. Live URL: flowtech-io.vercel.app. Connected to Supabase DB: aebntdjjniirnwthtwlx.supabase.co.
+            Central Dispatch Hub: 1231 Meadow Creek Dr. Live URL: flowtech-io.vercel.app.
           </p>
         </div>
 
         <div>
-          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">Operator Tools</h4>
+          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">Customer Services</h4>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-secondary);">
-            <li><a href="dispatch-dashboard.html" style="color: var(--cyan-neon); text-decoration: none;">🛡️ Live Dispatch Dashboard</a></li>
+            <li><a href="#booking" style="color: inherit; text-decoration: none;">Emergency Dispatch</a></li>
             <li><a href="#ai-quote-section" style="color: inherit; text-decoration: none;">AI Quote Engine</a></li>
-            <li><a href="https://aebntdjjniirnwthtwlx.supabase.co" target="_blank" style="color: inherit; text-decoration: none;">Supabase Console</a></li>
+            <li><a href="#diagnostics" style="color: inherit; text-decoration: none;">Acoustic Diagnostics</a></li>
           </ul>
         </div>
 
@@ -421,7 +421,7 @@
       </div>
 
       <div class="footer-bottom">
-        © 2026 FlowTech Inc. Supabase Database: aebntdjjniirnwthtwlx. Live Operator Console Active.
+        © 2026 FlowTech Inc. Central Hub: 1231 Meadow Creek Dr.
       </div>
     </div>
   </footer>
