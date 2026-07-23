@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlowTech — Modern Smart Plumbing & 24/7 Instant Dispatch</title>
-  <meta name="description" content="Next-generation smart plumbing booking platform with GPS distance calculation, address autocomplete, and 15-minute emergency dispatch from 1231 Meadow Creek Dr.">
+  <meta name="description" content="Next-generation smart plumbing booking platform with AI issue description quote generator, GPS distance calculation, and 15-minute emergency dispatch from 1231 Meadow Creek Dr.">
   <link rel="stylesheet" href="styles.css">
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -36,9 +36,9 @@
       <!-- Nav Links -->
       <ul class="nav-links">
         <li><a href="#booking" class="nav-link">Book Online</a></li>
+        <li><a href="#ai-quote-section" class="nav-link">AI Quote Generator</a></li>
         <li><a href="#diagnostics" class="nav-link">AI Diagnostics</a></li>
         <li><a href="#tracker" class="nav-link">Live Tracker</a></li>
-        <li><a href="#architecture" class="nav-link">Cloud Stack</a></li>
       </ul>
 
       <!-- High-Contrast Instant Book Button -->
@@ -57,12 +57,12 @@
         <!-- LEFT: 3D Isometric Graphic & Telemetry -->
         <div class="hero-visual-wrapper">
           <div class="hero-badge-tag">
-            <i data-lucide="navigation-2" style="width: 14px; height: 14px;"></i>
-            <span>ACCURATE GPS TELEMETRY & AUTOCOMPLETE ACTIVE</span>
+            <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+            <span>AI CUSTOM ISSUE QUOTE GENERATOR ACTIVE</span>
           </div>
           <h1 class="hero-title">Precision Plumbing. Instant AI Dispatch.</h1>
           <p class="hero-desc">
-            Experience the future of residential & commercial plumbing. Accurate GPS distance tracking, predictive address autocomplete, and master technicians dispatched directly from our central hub at <strong>1231 Meadow Creek Dr</strong>.
+            Describe your issue in plain English to generate an instant AI diagnostic report, severity analysis, and guaranteed price quote. Dispatched directly from <strong>1231 Meadow Creek Dr</strong>.
           </p>
 
           <!-- 3D Isometric Image Display with Floating Glass Telemetry Overlay -->
@@ -83,24 +83,24 @@
             <!-- Live Telemetry Overlay Node 2 -->
             <div class="telemetry-node node-2">
               <div class="telemetry-icon" style="color: var(--success); background: rgba(16, 185, 129, 0.15);">
-                <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+                <i data-lucide="brain-circuit" style="width: 18px; height: 18px;"></i>
               </div>
               <div>
-                <div class="telemetry-label">GPS HAVERSINE ENGINE</div>
-                <div class="telemetry-val" style="color: #34d399;">1231 MEADOW CREEK DR</div>
+                <div class="telemetry-label">AI QUOTE ENGINE</div>
+                <div class="telemetry-val" style="color: #34d399;">READY FOR PROMPT</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- RIGHT: 3-STEP INTERACTIVE BOOKING CARD -->
+        <!-- RIGHT: 3-STEP INTERACTIVE BOOKING CARD WITH AI QUOTE PROMPT -->
         <div class="glass-panel booking-card" id="booking">
           <div class="booking-card-header">
             <div class="booking-card-title">
               <span>Emergency or Scheduled Repair</span>
               <i data-lucide="shield" style="color: var(--cyan-neon); width: 20px;"></i>
             </div>
-            <div class="booking-card-subtitle">GPS drive time calculated from 1231 Meadow Creek Dr</div>
+            <div class="booking-card-subtitle">Select a service or describe your problem for AI quote</div>
           </div>
 
           <!-- Step Progress Indicator -->
@@ -109,7 +109,7 @@
             
             <div class="step-item active" id="stepIndicator1" onclick="goToStep(1)">
               <div class="step-number">1</div>
-              <span class="step-title">Issue</span>
+              <span class="step-title">Issue / AI Quote</span>
             </div>
 
             <div class="step-item" id="stepIndicator2" onclick="goToStep(2)">
@@ -123,9 +123,47 @@
             </div>
           </div>
 
-          <!-- STEP 1: SERVICE TYPE RADIO CARDS -->
+          <!-- STEP 1: SERVICE TYPE OR AI CUSTOM DESCRIPTION INPUT -->
           <div class="step-content active" id="step1">
-            <div class="form-label">Select Required Service</div>
+            
+            <!-- AI Plain Text Problem Description Input -->
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label class="form-label" style="display: flex; align-items: center; justify-content: space-between;">
+                <span>Describe Your Issue (AI Custom Quote)</span>
+                <span style="color: var(--cyan-neon); font-size: 11px;">✨ Powered by FlowTech AI</span>
+              </label>
+              <textarea class="form-input" id="aiIssueText" rows="3" placeholder="e.g. Water is pooling around my water heater in garage and making a loud bubbling sound..." style="resize: vertical; font-family: var(--font-main);"></textarea>
+              
+              <button type="button" class="btn-instant-book" style="width: 100%; margin-top: 10px; justify-content: center; background: linear-gradient(135deg, #6366f1, var(--cyan-neon)); color: #fff;" onclick="generateAiQuoteFromText()">
+                <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+                <span>Generate AI Quote & Diagnostic Analysis</span>
+              </button>
+            </div>
+
+            <!-- AI Quote Output Result Card (Hidden until generated) -->
+            <div class="ai-result-box" id="aiQuoteResultBox" style="display: none;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <div style="font-size: 11px; font-weight: 800; color: var(--cyan-neon); letter-spacing: 0.5px;">AI DIAGNOSED ANOMALY</div>
+                <div id="aiSeverityBadge" style="padding: 2px 10px; border-radius: 50px; font-size: 10px; font-weight: 800; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #f59e0b;">
+                  SEVERITY: HIGH
+                </div>
+              </div>
+              
+              <div style="font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 6px;" id="aiDiagnosisTitle">Water Heater Pressure Relief Valve Anomaly</div>
+              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;" id="aiExplanationText">AI predicts a faulty Temperature-Pressure Relief (TPR) valve. Recommended safety depressurization.</p>
+              
+              <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 11px; color: var(--text-muted);">Est. Labor: <span style="color: #fff; font-weight: 700;" id="aiEstLabor">1.5 Hours</span></div>
+                <div style="font-size: 20px; font-weight: 900; font-family: var(--font-mono); color: var(--cyan-neon);" id="aiQuoteAmount">$189.00</div>
+              </div>
+            </div>
+
+            <div style="text-align: center; margin: 16px 0; position: relative;">
+              <span style="background: rgba(13, 19, 36, 0.9); padding: 0 12px; font-size: 11px; color: var(--text-muted); position: relative; z-index: 1;">OR SELECT PRESET CATEGORY</span>
+              <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255,255,255,0.1); z-index: 0;"></div>
+            </div>
+
+            <!-- Standard Category Radio Cards -->
             <div class="service-options-grid">
               
               <div class="radio-card selected" onclick="selectService(this, 'leak', 149)">
@@ -280,43 +318,28 @@
     </div>
   </section>
 
-  <!-- CLOUD ARCHITECTURE SECTION -->
-  <section class="container" id="architecture" style="padding: 60px 24px;">
-    <div class="section-header">
-      <div class="section-tag">PRODUCTION DEPLOYMENT ARCHITECTURE</div>
-      <h2 class="section-title">Vercel + Render + Supabase Cloud Stack</h2>
-      <p class="section-desc">Live production web platform deployed to <strong>flowtech-io.vercel.app</strong>.</p>
-    </div>
-
-    <div class="arch-cards-grid">
-      <!-- Vercel Card -->
-      <div class="glass-panel arch-card">
-        <div class="arch-icon-box" style="border-color: #fff; color: #fff;">
-          <i data-lucide="triangle" style="transform: rotate(0deg);"></i>
-        </div>
-        <h3 style="font-size: 20px; font-weight: 800; color: #fff;">Vercel Edge CDN</h3>
-        <p style="font-size: 13px; color: var(--text-secondary);">Production URL: <span style="font-family: var(--font-mono); color: var(--cyan-neon);">flowtech-io.vercel.app</span></p>
-        <div class="arch-badge cyan">flowtech-io.vercel.app</div>
+  <!-- AI QUOTE GENERATOR STANDALONE SECTION -->
+  <section class="container" id="ai-quote-section" style="padding: 60px 24px;">
+    <div class="glass-panel" style="padding: 40px;">
+      <div class="section-header" style="margin-bottom: 30px;">
+        <div class="section-tag">AI PLUMBING QUOTE GENERATOR</div>
+        <h2 class="section-title">Describe Your Problem in Plain English</h2>
+        <p class="section-desc">Our AI analyzes your description to predict repair scope, required equipment, labor duration, and a instant fixed price quote.</p>
       </div>
 
-      <!-- Render Card -->
-      <div class="glass-panel arch-card">
-        <div class="arch-icon-box" style="border-color: var(--cyan-neon); color: var(--cyan-neon);">
-          <i data-lucide="server"></i>
+      <div style="max-width: 720px; margin: 0 auto;">
+        <div class="form-group">
+          <textarea class="form-input" id="standaloneAiText" rows="4" placeholder="Describe what's wrong (e.g. My kitchen sink drain is making a loud gurgling sound and backing up black water when dishwasher runs...)" style="font-size: 15px; padding: 18px;"></textarea>
         </div>
-        <h3 style="font-size: 20px; font-weight: 800; color: #fff;">Render Express API</h3>
-        <p style="font-size: 13px; color: var(--text-secondary);">Haversine GPS Engine & location distance calculator from 1231 Meadow Creek Dr.</p>
-        <div class="arch-badge cyan" id="renderHealthBadge">Render Status: Active</div>
-      </div>
 
-      <!-- Supabase Card -->
-      <div class="glass-panel arch-card">
-        <div class="arch-icon-box" style="border-color: var(--success); color: var(--success);">
-          <i data-lucide="database"></i>
+        <button type="button" class="btn-instant-book" style="width: 100%; justify-content: center; padding: 16px; font-size: 16px;" onclick="generateStandaloneAiQuote()">
+          <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+          <span>Analyze Issue & Compute AI Quote</span>
+        </button>
+
+        <div class="ai-result-box glass-panel" id="standaloneAiResultBox" style="display: none; margin-top: 24px; padding: 24px; border-color: var(--cyan-neon);">
+          <!-- Content populated via app.js -->
         </div>
-        <h3 style="font-size: 20px; font-weight: 800; color: #fff;">Supabase PostgreSQL</h3>
-        <p style="font-size: 13px; color: var(--text-secondary);">Relational DB storing dispatch tickets, technician GPS coordinates, and telemetry.</p>
-        <div class="arch-badge green">PostgreSQL • RLS</div>
       </div>
     </div>
   </section>
@@ -533,7 +556,7 @@
             <div class="logo-text">FLOW<span>TECH</span></div>
           </div>
           <p style="font-size: 13px; color: var(--text-secondary); max-width: 320px;">
-            Central Dispatch Hub: 1231 Meadow Creek Dr. Live URL: flowtech-io.vercel.app. Powered by Vercel, Render Express API, and Supabase PostgreSQL.
+            Central Dispatch Hub: 1231 Meadow Creek Dr. Live URL: flowtech-io.vercel.app. Powered by AI Issue Quote Engine, Vercel, Render, and Supabase.
           </p>
         </div>
 
@@ -541,8 +564,9 @@
           <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">Production Stack</h4>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-secondary);">
             <li>flowtech-io.vercel.app</li>
-            <li>Render Express Node API</li>
-            <li>Supabase Database & Auth</li>
+            <li>AI Issue Quote Engine</li>
+            <li>Render Node Express API</li>
+            <li>Supabase PostgreSQL</li>
           </ul>
         </div>
 
@@ -562,7 +586,7 @@
       </div>
 
       <div class="footer-bottom">
-        © 2026 FlowTech Inc. Central Hub: 1231 Meadow Creek Dr. Vercel deployment target: flowtech-io.vercel.app.
+        © 2026 FlowTech Inc. Central Hub: 1231 Meadow Creek Dr. AI Issue Quote Engine Enabled.
       </div>
     </div>
   </footer>

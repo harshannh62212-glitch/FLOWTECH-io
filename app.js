@@ -1,12 +1,12 @@
-// FlowTech Interactive Engine: Accurate GPS Geolocation & Predictive Address Autocomplete
-// Hub Origin: 1231 Meadow Creek Dr (32.8831° N, 96.9712° W)
+// FlowTech Interactive Engine: AI Custom Issue Quote Generator & Geolocation Engine
 
 let currentStep = 1;
 let selectedService = 'Emergency Pipe Leak';
 let basePrice = 149;
 let isUrgent = true;
 let debounceTimer = null;
-let currentGpsCoords = null; // { lat, lng }
+let currentGpsCoords = null;
+let aiCustomQuoteObj = null;
 
 const API_BASE = window.location.origin;
 
@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
   updateEstimateBackend();
   startTelemetryTicker();
 
-  // Modal event listeners
   const openModalBtn = document.getElementById('openModalBtn');
   const closeModalBtn = document.getElementById('closeModalBtn');
   const modalBackdrop = document.getElementById('modalBackdrop');
@@ -28,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Close address dropdown when clicking outside
   document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('addressSuggestions');
     const input = document.getElementById('serviceAddress');
@@ -38,14 +36,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Check Health of Express Backend
 async function fetchBackendHealth() {
   try {
     const res = await fetch(`${API_BASE}/api/health`);
     const data = await res.json();
     const badge = document.getElementById('renderHealthBadge');
     if (badge && data.status === 'online') {
-      badge.textContent = `Render Backend: Active • Hub: ${data.dispatchHub}`;
+      badge.textContent = `Render AI Backend: Active • Hub: ${data.dispatchHub}`;
     }
   } catch (err) {
     console.log('[Backend] Standby mode');
@@ -53,7 +50,122 @@ async function fetchBackendHealth() {
 }
 
 // -------------------------------------------------------------
-// HTML5 GEOLOCATION API: Precise GPS Distance Calculation
+// AI CUSTOM ISSUE QUOTE GENERATOR
+// -------------------------------------------------------------
+async function generateAiQuoteFromText() {
+  const textInput = document.getElementById('aiIssueText');
+  const text = textInput ? textInput.value.trim() : '';
+
+  if (!text) {
+    alert('Please type a brief description of your plumbing issue (e.g. water leaking near water heater).');
+    return;
+  }
+
+  const resultBox = document.getElementById('aiQuoteResultBox');
+  if (resultBox) {
+    resultBox.style.display = 'block';
+    resultBox.style.opacity = '0.5';
+  }
+
+  try {
+    const payload = { description: text, isUrgent: isUrgent };
+    if (currentGpsCoords) {
+      payload.lat = currentGpsCoords.lat;
+      payload.lng = currentGpsCoords.lng;
+    }
+
+    const res = await fetch(`${API_BASE}/api/ai-quote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (data.success && data.aiAnalysis) {
+      const ai = data.aiAnalysis;
+      aiCustomQuoteObj = ai;
+      selectedService = `AI Custom: ${ai.diagnosis}`;
+      basePrice = ai.aiQuote;
+
+      document.getElementById('aiDiagnosisTitle').textContent = ai.diagnosis;
+      document.getElementById('aiExplanationText').textContent = ai.explanation;
+      document.getElementById('aiEstLabor').textContent = ai.estimatedLabor;
+      document.getElementById('aiQuoteAmount').textContent = ai.formattedPrice;
+      
+      const badge = document.getElementById('aiSeverityBadge');
+      if (badge) {
+        badge.textContent = `SEVERITY: ${ai.severity}`;
+        badge.style.color = ai.severity === 'CRITICAL' ? '#ef4444' : ai.severity === 'HIGH' ? '#f59e0b' : '#34d399';
+      }
+
+      resultBox.style.opacity = '1';
+      updateEstimateBackend();
+    }
+  } catch (err) {
+    console.warn('AI Quote API Error:', err);
+  }
+}
+
+async function generateStandaloneAiQuote() {
+  const input = document.getElementById('standaloneAiText');
+  const text = input ? input.value.trim() : '';
+
+  if (!text) {
+    alert('Please enter a description of your issue.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/ai-quote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: text, isUrgent: true })
+    });
+
+    const data = await res.json();
+    if (data.success && data.aiAnalysis) {
+      const ai = data.aiAnalysis;
+      const box = document.getElementById('standaloneAiResultBox');
+      if (box) {
+        box.style.display = 'block';
+        box.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <div style="font-size: 12px; font-weight: 800; color: var(--cyan-neon);">AI DIAGNOSTIC REPORT</div>
+            <div style="padding: 4px 12px; border-radius: 50px; font-size: 11px; font-weight: 800; background: rgba(0,243,255,0.15); color: var(--cyan-neon); border: 1px solid var(--cyan-neon);">
+              SEVERITY: ${ai.severity}
+            </div>
+          </div>
+          <h3 style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 8px;">${ai.diagnosis}</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">${ai.explanation}</p>
+          <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <div>
+              <div style="font-size: 12px; color: var(--text-muted);">RECOMMENDED DURATION: <strong style="color:#fff;">${ai.estimatedLabor}</strong></div>
+              <div style="font-size: 12px; color: var(--text-muted);">REQUIRED TOOLS: <strong style="color:var(--cyan-neon);">${ai.recommendedEquipment.join(', ')}</strong></div>
+            </div>
+            <div style="font-size: 28px; font-weight: 900; font-family: var(--font-mono); color: var(--cyan-neon);">${ai.formattedPrice}</div>
+          </div>
+          <button class="btn-instant-book" style="width: 100%; margin-top: 18px; justify-content: center;" onclick="bookWithAiQuote('${escapeHtml(ai.diagnosis)}', ${ai.aiQuote})">
+            Book Tech With This AI Quote →
+          </button>
+        `;
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+  } catch (err) {
+    alert('AI quote calculation error');
+  }
+}
+
+function bookWithAiQuote(diagnosis, price) {
+  selectedService = `AI Quote: ${diagnosis}`;
+  basePrice = price;
+  goToStep(1);
+  const heroSection = document.getElementById('hero');
+  if (heroSection) heroSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+// -------------------------------------------------------------
+// HTML5 GEOLOCATION API
 // -------------------------------------------------------------
 function requestUserGpsLocation() {
   const addressInput = document.getElementById('serviceAddress');
@@ -71,17 +183,10 @@ function requestUserGpsLocation() {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
       currentGpsCoords = { lat, lng };
-
-      if (addressInput) {
-        addressInput.value = `📍 Current GPS Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-      }
-
-      // Re-run backend estimate with exact GPS coordinates
+      if (addressInput) addressInput.value = `📍 Current GPS Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
       updateEstimateBackend();
     },
     (error) => {
-      console.warn('GPS Error or Permission Denied:', error.message);
-      // Fallback: Default to local Irving/DFW area coordinates
       currentGpsCoords = { lat: 32.8910, lng: -96.9590 };
       if (addressInput) addressInput.value = '450 N MacArthur Blvd, Irving, TX';
       updateEstimateBackend();
@@ -91,11 +196,10 @@ function requestUserGpsLocation() {
 }
 
 // -------------------------------------------------------------
-// PREDICTIVE ADDRESS AUTOCOMPLETE ENGINE ("Guess as you type")
+// PREDICTIVE ADDRESS AUTOCOMPLETE ENGINE
 // -------------------------------------------------------------
 async function handleAddressInput(value) {
-  currentGpsCoords = null; // Clear manual GPS override when typing text address
-  
+  currentGpsCoords = null;
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(async () => {
     await fetchAddressSuggestions(value);
@@ -137,10 +241,8 @@ async function fetchAddressSuggestions(query) {
 function selectSuggestion(addressText, lat, lng) {
   const addressInput = document.getElementById('serviceAddress');
   const dropdown = document.getElementById('addressSuggestions');
-
   if (addressInput) addressInput.value = addressText;
   if (dropdown) dropdown.classList.remove('active');
-
   currentGpsCoords = { lat, lng };
   updateEstimateBackend();
 }
@@ -217,7 +319,6 @@ function selectSlot(btnElement) {
   btnElement.classList.add('selected');
 }
 
-// Send ETA request with GPS coordinates if present
 async function updateEstimateBackend() {
   const addressInput = document.getElementById('serviceAddress');
   const address = addressInput ? addressInput.value : '450 MacArthur Blvd, Irving, TX';
@@ -255,7 +356,6 @@ async function updateEstimateBackend() {
   }
 }
 
-// Submit Booking Dispatch
 async function submitBooking() {
   const addressInput = document.getElementById('serviceAddress');
   const phoneInput = document.getElementById('contactPhone');
@@ -317,50 +417,6 @@ function bookForDiagnostic() {
   goToStep(1);
   const heroSection = document.getElementById('hero');
   if (heroSection) heroSection.scrollIntoView({ behavior: 'smooth' });
-}
-
-// AI Diagnostic Engine
-const diagnosticData = {
-  leak: {
-    title: 'Micro-Crack Pressure Leak',
-    severity: 'SEVERITY: HIGH',
-    freq: '14.2 kHz',
-    loss: '1.4 Gal / hr',
-    desc: 'Recommended Action: Immediate ultrasonic hydro-isolation scan required to pinpoint pipe fracture without cutting drywall.'
-  },
-  clog: {
-    title: 'Main Line Acoustic Restriction',
-    severity: 'SEVERITY: MEDIUM',
-    freq: '4.8 kHz',
-    loss: '0.2 Gal / hr',
-    desc: 'Recommended Action: High-pressure hydro-jetting recommended. Organic debris blockage detected in secondary drainage loop.'
-  },
-  pressure: {
-    title: 'PRV Valve Diaphragm Fatigue',
-    severity: 'SEVERITY: CRITICAL',
-    freq: '22.1 kHz',
-    loss: '3.8 Gal / hr',
-    desc: 'Recommended Action: Pressure Regulator Valve auto-recalibration or immediate replacement to avoid appliance line damage.'
-  }
-};
-
-function runDiagnostic(type, btnElement) {
-  document.querySelectorAll('.symptom-btn').forEach(btn => btn.classList.remove('active'));
-  btnElement.classList.add('active');
-
-  const data = diagnosticData[type];
-  if (!data) return;
-
-  document.getElementById('diagResultTitle').textContent = data.title;
-  document.getElementById('diagSeverity').textContent = data.severity;
-  document.getElementById('diagFreq').textContent = data.freq;
-  document.getElementById('diagLoss').textContent = data.loss;
-  document.getElementById('diagRecommendation').textContent = data.desc;
-
-  const bars = document.querySelectorAll('.wave-bar');
-  bars.forEach(bar => {
-    bar.style.animationDuration = `${(Math.random() * 0.8 + 0.4).toFixed(2)}s`;
-  });
 }
 
 function startTelemetryTicker() {
