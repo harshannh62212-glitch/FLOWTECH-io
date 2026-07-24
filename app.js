@@ -1,4 +1,4 @@
-// FlowTech Interactive Engine: Triple-Sync Booking Storage Engine
+// FlowTech Interactive Engine: Dynamic AI Quote & Backend Integration
 // Central Dispatch Hub: 1231 Meadow Creek Dr
 
 let currentStep = 1;
@@ -252,7 +252,7 @@ async function fetchBackendHealth() {
 }
 
 // -------------------------------------------------------------
-// AI CUSTOM ISSUE QUOTE GENERATOR
+// DYNAMIC AI CUSTOM ISSUE QUOTE GENERATOR (BACKEND API INTEGRATION)
 // -------------------------------------------------------------
 async function generateAiQuoteFromText() {
   const textInput = document.getElementById('aiIssueText');
@@ -266,11 +266,131 @@ async function generateAiQuoteFromText() {
   const resultBox = document.getElementById('aiQuoteResultBox');
   if (resultBox) resultBox.style.display = 'block';
 
-  let diagnosis = 'Active Pipe Leak Anomaly';
+  try {
+    const res = await fetch(`${API_BASE}/api/ai-quote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        description: text,
+        isUrgent: isUrgent,
+        lat: currentGpsCoords?.lat,
+        lng: currentGpsCoords?.lng
+      })
+    });
+
+    if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+      const data = await res.json();
+      if (data.success && data.aiAnalysis) {
+        const ai = data.aiAnalysis;
+        selectedService = `AI Quote: ${ai.diagnosis}`;
+        basePrice = ai.aiQuote;
+
+        document.getElementById('aiDiagnosisTitle').textContent = ai.diagnosis;
+        document.getElementById('aiExplanationText').textContent = ai.explanation;
+        document.getElementById('aiEstLabor').textContent = ai.estimatedLabor;
+        document.getElementById('aiQuoteAmount').textContent = ai.formattedPrice;
+        
+        const badge = document.getElementById('aiSeverityBadge');
+        if (badge) {
+          badge.textContent = `SEVERITY: ${ai.severity}`;
+          badge.style.color = ai.severity === 'CRITICAL' ? '#ef4444' : ai.severity === 'HIGH' ? '#f59e0b' : '#34d399';
+        }
+
+        updateEstimateBackend();
+        return;
+      }
+    }
+  } catch (err) {}
+
+  runFallbackClientAiAnalysis(text, 'step1');
+}
+
+async function generateStandaloneAiQuote() {
+  const input = document.getElementById('standaloneAiText');
+  const text = input ? input.value.trim() : '';
+
+  if (!text) {
+    alert('Please enter a description of your issue.');
+    return;
+  }
+
+  const box = document.getElementById('standaloneAiResultBox');
+  if (!box) return;
+
+  box.style.display = 'block';
+  box.innerHTML = '<div style="text-align:center; color:var(--cyan-neon); font-size:14px; font-weight:700;">✨ Analyzing description with FlowTech AI...</div>';
+
+  let ai = null;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/ai-quote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        description: text,
+        isUrgent: isUrgent,
+        lat: currentGpsCoords?.lat,
+        lng: currentGpsCoords?.lng
+      })
+    });
+
+    if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+      const data = await res.json();
+      if (data.success && data.aiAnalysis) ai = data.aiAnalysis;
+    }
+  } catch (err) {}
+
+  if (!ai) {
+    ai = {
+      diagnosis: text.toLowerCase().includes('leak') ? 'Active Pipe Leak Anomaly' : 'Main Drainage Restriction',
+      severity: 'HIGH',
+      estimatedLabor: '1.5 Hours',
+      recommendedEquipment: ['Ultrasonic Acoustic Scanner', 'Thermal Imaging Camera'],
+      explanation: `AI Analysis detected pressure anomaly based on "${text.substring(0, 45)}...". Recommended acoustic sensor check.`,
+      aiQuote: 169,
+      formattedPrice: '$169.00'
+    };
+  }
+
+  const equipHtml = (ai.recommendedEquipment || ['Ultrasonic Scanner'])
+    .map(eq => `<span style="display:inline-block; padding:3px 8px; border-radius:4px; background:rgba(0,243,255,0.1); border:1px solid var(--cyan-border); font-size:11px; color:var(--cyan-neon); margin-right:4px;">🛠️ ${eq}</span>`)
+    .join('');
+
+  box.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+      <div style="font-size: 11px; font-weight: 800; color: var(--cyan-neon); letter-spacing: 0.5px;">✨ FLOWTECH AI DIAGNOSTIC REPORT</div>
+      <div style="padding: 4px 12px; border-radius: 50px; font-size: 11px; font-weight: 800; background: rgba(0,243,255,0.15); color: ${ai.severity === 'CRITICAL' ? '#ef4444' : ai.severity === 'HIGH' ? '#f59e0b' : '#34d399'}; border: 1px solid ${ai.severity === 'CRITICAL' ? '#ef4444' : '#f59e0b'};">
+        SEVERITY: ${ai.severity}
+      </div>
+    </div>
+    <h3 style="font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 8px;">${escapeHtml(ai.diagnosis)}</h3>
+    <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.6;">${escapeHtml(ai.explanation)}</p>
+    
+    <div style="margin-bottom: 16px;">
+      <div style="font-size: 11px; color: var(--text-muted); font-weight: 700; margin-bottom: 6px;">RECOMMENDED EQUIPMENT:</div>
+      <div>${equipHtml}</div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+      <div>
+        <div style="font-size: 12px; color: var(--text-muted);">RECOMMENDED LABOR: <strong style="color:#fff;">${ai.estimatedLabor}</strong></div>
+      </div>
+      <div style="font-size: 32px; font-weight: 900; font-family: var(--font-mono); color: var(--cyan-neon);">${ai.formattedPrice}</div>
+    </div>
+    
+    <button class="btn-instant-book" style="width: 100%; margin-top: 18px; justify-content: center; padding: 14px; font-size: 15px;" onclick="bookWithAiQuote('${escapeHtml(ai.diagnosis)}', ${ai.aiQuote})">
+      Book Tech With This AI Quote →
+    </button>
+  `;
+  if (window.lucide) lucide.createIcons();
+}
+
+function runFallbackClientAiAnalysis(text, targetContainerId) {
+  let diagnosis = 'Active Pipe Pressure Anomaly';
   let severity = 'HIGH';
   let estLabor = '1.5 Hours';
   let quote = 169;
-  let explanation = 'AI Analysis detected active fluid pressure anomaly. Immediate acoustic isolation scan is recommended.';
+  let explanation = `AI Analysis of "${text.substring(0, 40)}..." detected fluid pressure anomaly. Immediate acoustic scan recommended.`;
 
   const lower = text.toLowerCase();
   if (lower.includes('heater') || lower.includes('hot water') || lower.includes('bubbling')) {
@@ -278,7 +398,7 @@ async function generateAiQuoteFromText() {
     severity = lower.includes('bubbling') ? 'CRITICAL' : 'HIGH';
     estLabor = '1.5 Hours';
     quote = 189;
-    explanation = 'AI Analysis predicts a faulty Temperature-Pressure Relief (TPR) valve. Emergency safety depressurization recommended.';
+    explanation = 'AI Analysis predicts a faulty Temperature-Pressure Relief (TPR) valve. Emergency depressurization recommended.';
   } else if (lower.includes('clog') || lower.includes('drain') || lower.includes('gurgling') || lower.includes('backed up')) {
     diagnosis = 'Main Drainage Line Restriction & Clog';
     severity = 'MEDIUM';
@@ -302,46 +422,6 @@ async function generateAiQuoteFromText() {
   }
 
   updateEstimateBackend();
-}
-
-async function generateStandaloneAiQuote() {
-  const input = document.getElementById('standaloneAiText');
-  const text = input ? input.value.trim() : '';
-
-  if (!text) {
-    alert('Please enter a description of your issue.');
-    return;
-  }
-
-  let diagnosis = 'Main Line Pipe Restriction';
-  let severity = 'HIGH';
-  let estHours = '1.5 Hours';
-  let quote = 169;
-
-  const box = document.getElementById('standaloneAiResultBox');
-  if (box) {
-    box.style.display = 'block';
-    box.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-        <div style="font-size: 12px; font-weight: 800; color: var(--cyan-neon);">AI DIAGNOSTIC REPORT</div>
-        <div style="padding: 4px 12px; border-radius: 50px; font-size: 11px; font-weight: 800; background: rgba(0,243,255,0.15); color: var(--cyan-neon); border: 1px solid var(--cyan-neon);">
-          SEVERITY: ${severity}
-        </div>
-      </div>
-      <h3 style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 8px;">${diagnosis}</h3>
-      <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">AI Analysis predicts pipe pressure build-up. Recommended acoustic sensor check.</p>
-      <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-        <div>
-          <div style="font-size: 12px; color: var(--text-muted);">RECOMMENDED DURATION: <strong style="color:#fff;">${estHours}</strong></div>
-        </div>
-        <div style="font-size: 28px; font-weight: 900; font-family: var(--font-mono); color: var(--cyan-neon);">$${quote}.00</div>
-      </div>
-      <button class="btn-instant-book" style="width: 100%; margin-top: 18px; justify-content: center;" onclick="bookWithAiQuote('${escapeHtml(diagnosis)}', ${quote})">
-        Book Tech With This AI Quote →
-      </button>
-    `;
-    if (window.lucide) lucide.createIcons();
-  }
 }
 
 function bookWithAiQuote(diagnosis, price) {
@@ -593,21 +673,18 @@ async function submitBooking() {
     created_at: new Date().toISOString()
   };
 
-  // 1. SAVE TO LOCAL STORAGE FOR INSTANT TAB SYNC
   try {
     const existing = JSON.parse(localStorage.getItem('flowtech_global_bookings') || '[]');
     existing.unshift(appointmentRecord);
     localStorage.setItem('flowtech_global_bookings', JSON.stringify(existing));
   } catch (e) {}
 
-  // 2. DIRECT CLIENT-SIDE SUPABASE INSERTION
   if (supabaseClient) {
     try {
       await supabaseClient.from('bookings').insert([appointmentRecord]);
     } catch (e) {}
   }
 
-  // 3. EXPRESS BACKEND API BACKUP INSERTION
   try {
     fetch(`${API_BASE}/api/dispatch`, {
       method: 'POST',

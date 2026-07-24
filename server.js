@@ -1,4 +1,4 @@
-// FlowTech Express Backend Server (100% Fail-Safe Dual Supabase + Memory Dispatch Engine)
+// FlowTech Express Backend Server (100% Fail-Safe Dual Supabase + Memory Dispatch + AI Quote Engine)
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -22,7 +22,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// Memory Store (Pre-seeded with rich live demo appointments)
+// Memory Store
 const memoryProfiles = [
   {
     username: 'sarah_connor',
@@ -125,6 +125,71 @@ function calculateEtaFromHub(destinationAddress, userLat, userLng) {
     trafficCondition: distanceMiles > 5 ? 'Moderate Traffic' : 'Optimal Flow'
   };
 }
+
+// -------------------------------------------------------------
+// DYNAMIC BACKEND AI QUOTE GENERATOR API ENDPOINT
+// -------------------------------------------------------------
+app.post('/api/ai-quote', (req, res) => {
+  const { description, isUrgent, lat, lng } = req.body;
+  const text = (description || '').toLowerCase().trim();
+
+  let diagnosis = 'General Plumbing System Diagnostic & Flow Scan';
+  let severity = 'MEDIUM';
+  let estHours = '1.0 Hour';
+  let basePrice = 139;
+  let equipment = ['Ultrasonic Acoustic Sensor', 'Pressure Calibration Gauge'];
+  let explanation = 'Based on your description, our AI recommends an initial acoustic scan to evaluate pipe integrity and seal condition.';
+
+  if (text.match(/leak|burst|flood|pooling|wet|dripping|ceiling|wall|pipe|slab|water stain/)) {
+    diagnosis = text.includes('ceiling') || text.includes('wall') ? 'Intra-Wall Acoustic Pipe Fracture' : 'Active Water Supply Line Pressure Leak';
+    severity = text.includes('flood') || text.includes('burst') ? 'CRITICAL' : 'HIGH';
+    estHours = '1.5 Hours';
+    basePrice = 169;
+    equipment = ['Ultrasonic Hydro-Isolation Scan', 'Thermal Imaging Camera', 'Emergency Pipe Clamp'];
+    explanation = `AI Analysis of "${description.substring(0, 50)}..." detected risk of active structural water damage. Immediate acoustic isolation scan is recommended to pinpoint pipe wall fracture.`;
+  } else if (text.match(/heater|hot water|cold|boiler|bubbling|tank|pilot|thermostat|rust/)) {
+    diagnosis = text.includes('tankless') ? 'Tankless Water Heater Flow Sensor Anomaly' : 'Water Heater Pressure Relief Valve Degradation';
+    severity = text.includes('bubbling') || text.includes('rust') || text.includes('loud') ? 'CRITICAL' : 'HIGH';
+    estHours = '1.5 - 2.0 Hours';
+    basePrice = 189;
+    equipment = ['TPR Pressure Safety Sensor', 'Digital Thermostat Analyzer', 'Element Replacement Kit'];
+    explanation = `AI Analysis detected thermal loop degradation based on "${description.substring(0, 50)}...". Emergency depressurization and valve inspection recommended.`;
+  } else if (text.match(/clog|drain|backed up|gurgling|smell|sewer|overflow|sink|toilet|sludge/)) {
+    diagnosis = text.includes('sewer') || text.includes('toilet') ? 'Main Line Sewer Drain Restriction & Overflow' : 'Ultrasonic Drain Line Blockage';
+    severity = text.includes('overflow') || text.includes('sewer') ? 'HIGH' : 'MEDIUM';
+    estHours = '1.0 - 1.5 Hours';
+    basePrice = 129;
+    equipment = ['HD Fiberoptic Sewer Camera', 'High-Pressure Hydro-Jetter Unit'];
+    explanation = `AI Analysis detected organic debris or grease buildup in drainage loop based on "${description.substring(0, 50)}...". Hydro-jetting recommended to restore 100% flow capacity.`;
+  } else if (text.match(/gas|smell gas|hissing|meter/)) {
+    diagnosis = 'Gas Supply Line Pressure Anomaly';
+    severity = 'CRITICAL';
+    estHours = '2.0 Hours';
+    basePrice = 219;
+    equipment = ['Combustible Gas Sniffer Sensor', 'Pressure Manometer Gauge'];
+    explanation = `CRITICAL AI WARNING: Gas line anomaly detected based on description. Immediate technician dispatch and gas line isolation required.`;
+  }
+
+  const finalQuote = isUrgent !== false ? basePrice : Math.round(basePrice * 0.9);
+  const etaData = calculateEtaFromHub('Service Area', lat, lng);
+
+  res.json({
+    success: true,
+    description: description,
+    aiAnalysis: {
+      diagnosis: diagnosis,
+      severity: severity,
+      estimatedLabor: estHours,
+      recommendedEquipment: equipment,
+      explanation: explanation,
+      aiQuote: finalQuote,
+      prepTimeMins: etaData.prepTimeMins,
+      driveTimeMins: etaData.driveTimeMins,
+      totalEtaMins: etaData.totalEtaMins,
+      formattedPrice: `$${finalQuote}.00`
+    }
+  });
+});
 
 // -------------------------------------------------------------
 // USER USERNAME & PASSWORD AUTHENTICATION API ENDPOINTS
@@ -239,7 +304,6 @@ app.get('/api/incoming-calls', async (req, res) => {
       } catch (e) {}
     }
 
-    // Merge Supabase tickets with memory tickets (avoiding duplicates by ticket_id)
     const ticketMap = new Map();
     memoryBookings.forEach(t => ticketMap.set(t.ticket_id, t));
     supabaseTickets.forEach(t => ticketMap.set(t.ticket_id, t));
@@ -338,61 +402,6 @@ app.post('/api/simulate-call', async (req, res) => {
     success: true,
     message: 'Simulated appointment logged to Supabase & Memory',
     ticket: newTicket
-  });
-});
-
-app.post('/api/ai-quote', (req, res) => {
-  const { description, isUrgent, lat, lng } = req.body;
-  const text = (description || '').toLowerCase().trim();
-
-  let diagnosis = 'General Plumbing System Diagnostic';
-  let severity = 'MEDIUM';
-  let estHours = '1.0 Hour';
-  let basePrice = 139;
-  let equipment = ['Ultrasonic Acoustic Sensor', 'Pressure Calibration Gauge'];
-  let explanation = 'Based on your description, our AI recommends an initial acoustic scan to evaluate pipe integrity and seal condition.';
-
-  if (text.match(/leak|burst|flood|pooling|wet|dripping|ceiling|wall/)) {
-    diagnosis = 'Active Micro-Leak / Pipe Pressure Fracture';
-    severity = 'HIGH';
-    estHours = '1.5 Hours';
-    basePrice = 169;
-    equipment = ['Ultrasonic Hydro-Isolation Scan', 'Thermal Imaging Camera', 'Emergency Pipe Clamp'];
-    explanation = 'AI Analysis detected risk of active water damage. Immediate acoustic isolation scan is recommended to pinpoint pipe wall fracture without drywall cutting.';
-  } else if (text.match(/heater|hot water|cold|boiler|bubbling|tank|pilot/)) {
-    diagnosis = 'Water Heater Pressure Relief Valve Anomaly';
-    severity = text.includes('bubbling') || text.includes('loud') ? 'CRITICAL' : 'HIGH';
-    estHours = '1.5 Hours';
-    basePrice = 189;
-    equipment = ['TPR Pressure Safety Sensor', 'Digital Thermostat Analyzer', 'Element Replacement Kit'];
-    explanation = 'AI Analysis predicts a faulty Temperature-Pressure Relief (TPR) valve or heating element degradation. Emergency depressurization recommended.';
-  } else if (text.match(/clog|drain|backed up|gurgling|smell|sewer|overflow|sink|toilet/)) {
-    diagnosis = 'Main Drainage Line Restriction & Clog';
-    severity = 'MEDIUM';
-    estHours = '1.0 Hour';
-    basePrice = 129;
-    equipment = ['HD Sewer Camera Inspection', 'High-Pressure Hydro-Jetter'];
-    explanation = 'AI Analysis detected organic debris or grease buildup in drainage loop. Hydro-jetting recommended to restore 100% flow capacity.';
-  }
-
-  const finalQuote = isUrgent !== false ? basePrice : Math.round(basePrice * 0.9);
-  const etaData = calculateEtaFromHub('Service Area', lat, lng);
-
-  res.json({
-    success: true,
-    description: description,
-    aiAnalysis: {
-      diagnosis: diagnosis,
-      severity: severity,
-      estimatedLabor: estHours,
-      recommendedEquipment: equipment,
-      explanation: explanation,
-      aiQuote: finalQuote,
-      prepTimeMins: etaData.prepTimeMins,
-      driveTimeMins: etaData.driveTimeMins,
-      totalEtaMins: etaData.totalEtaMins,
-      formattedPrice: `$${finalQuote}.00`
-    }
   });
 });
 
@@ -499,5 +508,5 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`\n🚀 FlowTech Server on PORT ${PORT}`);
   console.log(`📍 Hub Origin: 1231 Meadow Creek Dr (32.8831, -96.9712)`);
-  console.log(`⚡ Dual Supabase + Memory Dispatch Active • Instance: https://aebntdjjniirnwthtwlx.supabase.co`);
+  console.log(`⚡ Dynamic AI Quote Engine Active • Supabase: https://aebntdjjniirnwthtwlx.supabase.co`);
 });
