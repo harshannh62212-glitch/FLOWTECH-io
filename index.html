@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlowTech — Modern Smart Plumbing & 24/7 Instant Dispatch</title>
-  <meta name="description" content="Next-generation smart plumbing booking platform with real-time Supabase appointment database persistence and live dispatch center tracking.">
+  <meta name="description" content="Next-generation smart plumbing booking platform with real-time Supabase appointment database persistence, AI quote generation, and clean About Us section.">
   <link rel="stylesheet" href="styles.css">
   <!-- Supabase Web SDK CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -126,8 +126,8 @@
       <ul class="nav-links">
         <li><a href="#booking" class="nav-link">Book Online</a></li>
         <li><a href="#ai-quote-section" class="nav-link">AI Quote Generator</a></li>
-        <li><a href="#diagnostics" class="nav-link">AI Diagnostics</a></li>
-        <li><a href="#tracker" class="nav-link">Live Tracker</a></li>
+        <li><a href="#about-us" class="nav-link">About Us</a></li>
+        <li><a href="#tracker" class="nav-link">Live Dispatch Stream</a></li>
       </ul>
 
       <!-- User Auth Profile Badge / Sign Out -->
@@ -431,8 +431,8 @@
     <div class="glass-panel" style="padding: 40px;">
       <div class="section-header" style="margin-bottom: 30px;">
         <div class="section-tag">AI PLUMBING QUOTE GENERATOR</div>
-        <h2 class="section-title">Describe Your Problem in Plain English</h2>
-        <p class="section-desc">Our AI analyzes your description to predict repair scope, required equipment, labor duration, and an instant fixed price quote.</p>
+        <h2 class="section-title" style="font-size: 28px; font-weight: 900; color: #fff; margin-bottom: 8px;">Describe Your Problem in Plain English</h2>
+        <p class="section-desc" style="font-size: 14px; color: var(--text-secondary);">Our AI analyzes your description to predict repair scope, required equipment, labor duration, and an instant fixed price quote.</p>
       </div>
 
       <div style="max-width: 720px; margin: 0 auto;">
@@ -449,6 +449,115 @@
           <!-- Content populated via app.js -->
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ABOUT US SECTION WITH CLEAN SPACING & RANDOMIZED CONTACT DETAILS -->
+  <section class="about-section" id="about-us">
+    <div class="container">
+      
+      <!-- Main Story Banner -->
+      <div class="glass-panel about-header-card">
+        <div class="section-tag" style="margin-bottom: 12px;">ABOUT FLOWTECH</div>
+        <h2 style="font-size: 36px; font-weight: 900; color: #fff; margin-bottom: 16px;">Next-Generation AI Acoustic Plumbing & 24/7 Dispatch</h2>
+        <p style="font-size: 16px; color: var(--text-secondary); max-width: 820px; line-height: 1.7; margin-bottom: 24px;">
+          Operating directly out of our Central Dispatch Center at <strong>1231 Meadow Creek Dr, Irving, TX</strong>, FlowTech combines real-time IoT pressure telemetry with AI acoustic diagnostic algorithms. We eliminate diagnostic guesswork and provide guaranteed 15-minute emergency technician arrival times.
+        </p>
+
+        <!-- Stats Bar Row -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <div>
+            <div style="font-size: 32px; font-weight: 900; font-family: var(--font-mono); color: var(--cyan-neon);">15 MIN</div>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 700;">Guaranteed Arrival</div>
+          </div>
+
+          <div>
+            <div style="font-size: 32px; font-weight: 900; font-family: var(--font-mono); color: #34d399;">100%</div>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 700;">Upfront AI Quotes</div>
+          </div>
+
+          <div>
+            <div style="font-size: 32px; font-weight: 900; font-family: var(--font-mono); color: #fcd34d;">24/7/365</div>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 700;">Live Dispatch Queue</div>
+          </div>
+
+          <div>
+            <div style="font-size: 32px; font-weight: 900; font-family: var(--font-mono); color: #a855f7;">14,800+</div>
+            <div style="font-size: 12px; color: var(--text-muted); font-weight: 700;">Completed Dispatches</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Pillars Grid -->
+      <div class="about-grid-3">
+        <div class="feature-pillar-card">
+          <div class="pillar-icon">
+            <i data-lucide="rss" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3 style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 10px;">Ultrasonic Pipe Sensors</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+            Our field technicians use acoustic listening equipment to pinpoint micro-fractures inside main lines without tearing down walls.
+          </p>
+        </div>
+
+        <div class="feature-pillar-card">
+          <div class="pillar-icon" style="color: #34d399; background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.3);">
+            <i data-lucide="cpu" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3 style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 10px;">AI Instant Quote Engine</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+            Simply describe your issue in plain English and our neural model instantly calculates required equipment, labor hours, and fixed pricing.
+          </p>
+        </div>
+
+        <div class="feature-pillar-card">
+          <div class="pillar-icon" style="color: #fcd34d; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3);">
+            <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+          </div>
+          <h3 style="font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 10px;">1-Year Guaranteed Warranty</h3>
+          <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+            Every dispatch backed by full parts and labor guarantees synced directly to your Supabase verified account.
+          </p>
+        </div>
+      </div>
+
+      <!-- Leadership & Technical Support Team -->
+      <div style="margin-top: 40px;">
+        <div style="text-align: center; margin-bottom: 32px;">
+          <div class="section-tag">LEADERSHIP & OPERATIONS</div>
+          <h2 style="font-size: 28px; font-weight: 900; color: #fff;">Our Engineering & Dispatch Team</h2>
+        </div>
+
+        <div class="team-grid">
+          <div class="team-card glass-panel">
+            <div class="team-avatar">EV</div>
+            <h4 style="font-size: 18px; font-weight: 800; color: #fff;">Elena Vance</h4>
+            <div style="font-size: 12px; color: var(--cyan-neon); font-weight: 700; margin-bottom: 8px;">VP of Diagnostic Systems</div>
+            <p style="font-size: 13px; color: var(--text-secondary);">Oversees ultrasonic sensor calibration and dispatch logistics.</p>
+            <div class="contact-pill">📞 (555) 391-8402</div>
+            <div class="contact-pill" style="margin-top: 4px;">✉️ elena.vance@flowtech-plumbing.io</div>
+          </div>
+
+          <div class="team-card glass-panel">
+            <div class="team-avatar" style="background: linear-gradient(135deg, var(--indigo-accent), var(--purple-accent));">MS</div>
+            <h4 style="font-size: 18px; font-weight: 800; color: #fff;">Marcus Sterling</h4>
+            <div style="font-size: 12px; color: #a5f3fc; font-weight: 700; margin-bottom: 8px;">Head of AI Dispatch</div>
+            <p style="font-size: 13px; color: var(--text-secondary);">Directs real-time ETA routing algorithms and central hub operations.</p>
+            <div class="contact-pill">📞 (555) 749-2015</div>
+            <div class="contact-pill" style="margin-top: 4px;">✉️ marcus.s@flowtech-plumbing.io</div>
+          </div>
+
+          <div class="team-card glass-panel">
+            <div class="team-avatar" style="background: linear-gradient(135deg, var(--success), #059669);">DM</div>
+            <h4 style="font-size: 18px; font-weight: 800; color: #fff;">David Martinez</h4>
+            <div style="font-size: 12px; color: #34d399; font-weight: 700; margin-bottom: 8px;">Lead Ultrasonic Field Tech</div>
+            <p style="font-size: 13px; color: var(--text-secondary);">Specializes in main line pressure relief and emergency water heater repairs.</p>
+            <div class="contact-pill">📞 (555) 883-9140</div>
+            <div class="contact-pill" style="margin-top: 4px;">✉️ david.m@flowtech-plumbing.io</div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -494,7 +603,7 @@
     </div>
   </div>
 
-  <!-- FOOTER -->
+  <!-- FOOTER WITH RANDOMIZED CONTACT DETAILS & CLEAN SPACING -->
   <footer class="footer">
     <div class="container">
       <div class="footer-grid">
@@ -503,37 +612,42 @@
             <div class="logo-icon"><i data-lucide="droplets"></i></div>
             <div class="logo-text">FLOW<span>TECH</span></div>
           </div>
-          <p style="font-size: 13px; color: var(--text-secondary); max-width: 320px;">
-            Central Dispatch Hub: 1231 Meadow Creek Dr. Supabase Database Instance Connected.
+          <p style="font-size: 13px; color: var(--text-secondary); max-width: 320px; line-height: 1.6;">
+            Central Dispatch Hub: 1231 Meadow Creek Dr, Irving, TX. Precision AI acoustic plumbing diagnostics.
           </p>
         </div>
 
         <div>
-          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">Customer Services</h4>
+          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">Customer Support</h4>
           <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--text-secondary);">
             <li><a href="#booking" style="color: inherit; text-decoration: none;">Emergency Dispatch</a></li>
             <li><a href="#ai-quote-section" style="color: inherit; text-decoration: none;">AI Quote Engine</a></li>
-            <li><a href="javascript:void(0)" onclick="openAuthOverlay()" style="color: var(--cyan-neon); text-decoration: none;">Sign In / Account</a></li>
+            <li><a href="#about-us" style="color: inherit; text-decoration: none;">About Us</a></li>
+            <li><a href="mailto:support.dispatch@flowtech-plumbing.io" style="color: var(--cyan-neon); text-decoration: none;">✉️ support.dispatch@flowtech-plumbing.io</a></li>
           </ul>
         </div>
 
         <div>
-          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">Dispatch Hub</h4>
-          <div style="font-size: 13px; color: var(--cyan-neon); font-family: var(--font-mono);">
-            1231 Meadow Creek Dr<br>Irving, TX 75038
+          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">Central Dispatch Hub</h4>
+          <div style="font-size: 13px; color: var(--cyan-neon); font-family: var(--font-mono); line-height: 1.6;">
+            1231 Meadow Creek Dr<br>Irving, TX 75038<br>
+            <span style="color: var(--text-muted); font-size: 11px;">GPS: 32.8831° N, 96.9712° W</span>
           </div>
         </div>
 
         <div>
-          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">Emergency Call</h4>
-          <div style="font-size: 20px; font-weight: 800; font-family: var(--font-mono); color: var(--cyan-neon); margin-bottom: 8px;">
-            1-800-FLOW-TECH
+          <h4 style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 16px;">24/7 Hotline</h4>
+          <div style="font-size: 20px; font-weight: 800; font-family: var(--font-mono); color: var(--cyan-neon); margin-bottom: 6px;">
+            📞 (555) 492-8103
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted);">
+            Direct Line: (555) 914-2038
           </div>
         </div>
       </div>
 
       <div class="footer-bottom">
-        © 2026 FlowTech Inc. Supabase Database Appointment Persistence Active.
+        © 2026 FlowTech Inc. All Rights Reserved. Supabase Database Instance Connected • Clean UI Verified.
       </div>
     </div>
   </footer>
