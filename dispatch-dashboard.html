@@ -33,7 +33,7 @@
       background: rgba(3, 6, 14, 0.95);
       backdrop-filter: blur(20px);
       z-index: 9999;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       transition: var(--transition-smooth);
@@ -78,23 +78,23 @@
 
   <div class="cyber-grid-overlay"></div>
 
-  <!-- OPERATOR SECURITY PIN LOCK SCREEN (Optional) -->
+  <!-- OPERATOR SECURITY PIN LOCK SCREEN -->
   <div class="pin-lock-overlay" id="pinLockScreen">
     <div class="glass-panel pin-card">
       <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(0, 243, 255, 0.15); border: 2px solid var(--cyan-neon); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; color: var(--cyan-neon); box-shadow: 0 0 25px var(--cyan-glow);">
-        <i data-lucide="shield" style="width: 28px; height: 28px;"></i>
+        <i data-lucide="shield-lock" style="width: 28px; height: 28px;"></i>
       </div>
 
-      <h2 style="font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 8px;">Restricted Dispatch Console</h2>
-      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">Enter Operator PIN to access dispatch dashboard.</p>
+      <h2 style="font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 8px;">Restricted Operator Console</h2>
+      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 24px;">Enter Operator Password to access dispatch dashboard.</p>
 
       <form onsubmit="verifyOperatorPin(event)">
         <div class="form-group">
-          <input type="password" class="form-input" id="operatorPinInput" placeholder="Enter Operator PIN (4092)" style="text-align: center; font-size: 20px; letter-spacing: 4px; font-family: var(--font-mono); padding: 14px;" autofocus>
+          <input type="password" class="form-input" id="operatorPinInput" placeholder="Enter Operator Password" style="text-align: center; font-size: 20px; letter-spacing: 4px; font-family: var(--font-mono); padding: 14px;" autofocus required>
         </div>
 
         <div id="pinErrorMsg" style="display: none; color: #f87171; font-size: 12px; font-weight: 700; margin-bottom: 16px;">
-          ❌ Invalid Operator PIN. Try 4092.
+          ❌ Password incorrect.
         </div>
 
         <button type="submit" class="btn-next" style="width: 100%; font-size: 15px; padding: 14px;">
@@ -121,6 +121,7 @@
 
       <ul class="nav-links">
         <li><a href="index.html" class="nav-link">← Customer Booking Site</a></li>
+        <li><button onclick="lockConsole()" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:13px; font-weight:600;">🔒 Lock Console</button></li>
       </ul>
 
       <div style="display: flex; gap: 10px;">
@@ -215,8 +216,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       initSupabaseClient();
-      loadIncomingCalls();
-      setInterval(loadIncomingCalls, 3000);
+      checkAuthSession();
     });
 
     function initSupabaseClient() {
@@ -227,10 +227,46 @@
       }
     }
 
+    function checkAuthSession() {
+      const isAuth = sessionStorage.getItem('flowtech_operator_auth');
+      const lockScreen = document.getElementById('pinLockScreen');
+
+      if (isAuth === 'true') {
+        if (lockScreen) lockScreen.style.display = 'none';
+        loadIncomingCalls();
+        setInterval(loadIncomingCalls, 3000);
+      } else {
+        if (lockScreen) lockScreen.style.display = 'flex';
+      }
+    }
+
+    function verifyOperatorPin(e) {
+      e.preventDefault();
+      const pinInput = document.getElementById('operatorPinInput');
+      const errorMsg = document.getElementById('pinErrorMsg');
+      const pin = (pinInput ? pinInput.value : '').trim();
+
+      if (pin === '1516' || pin === 'flowtech2026') {
+        sessionStorage.setItem('flowtech_operator_auth', 'true');
+        if (errorMsg) errorMsg.style.display = 'none';
+        checkAuthSession();
+      } else {
+        if (errorMsg) {
+          errorMsg.textContent = '❌ Password incorrect.';
+          errorMsg.style.display = 'block';
+        }
+        if (pinInput) pinInput.value = '';
+      }
+    }
+
+    function lockConsole() {
+      sessionStorage.removeItem('flowtech_operator_auth');
+      checkAuthSession();
+    }
+
     async function loadIncomingCalls() {
       let tickets = [];
 
-      // 1. Fetch from Express API (merges memory + Supabase)
       try {
         const res = await fetch(`${API_BASE}/api/incoming-calls`);
         if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
@@ -239,7 +275,6 @@
         }
       } catch (err) {}
 
-      // 2. Direct Supabase fallback
       if (tickets.length === 0 && supabaseClient) {
         try {
           const { data } = await supabaseClient.from('bookings').select('*').order('created_at', { ascending: false });
