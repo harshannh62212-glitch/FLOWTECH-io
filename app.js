@@ -1,4 +1,4 @@
-// FlowTech Interactive Engine: Direct Supabase Appointment Database Engine
+// FlowTech Interactive Engine: Triple-Sync Booking Storage Engine
 // Central Dispatch Hub: 1231 Meadow Creek Dr
 
 let currentStep = 1;
@@ -49,7 +49,6 @@ function initSupabaseClient() {
   if (window.supabase) {
     try {
       supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      console.log('[Supabase Web SDK] Connected to:', SUPABASE_URL);
     } catch (e) {}
   }
 }
@@ -176,7 +175,6 @@ async function handleUserRegisterSubmit(e) {
 
   saveUserAndUnlock();
 
-  // Save directly to Supabase DB
   if (supabaseClient) {
     try {
       await supabaseClient.from('profiles').upsert([{
@@ -527,7 +525,7 @@ async function updateEstimateBackend() {
 }
 
 // -------------------------------------------------------------
-// DIRECT SUPABASE APPOINTMENT DATABASE PERSISTENCE
+// TRIPLE-SYNC APPOINTMENT PERSISTENCE ENGINE
 // -------------------------------------------------------------
 async function submitBooking() {
   if (!activeUser) {
@@ -535,7 +533,7 @@ async function submitBooking() {
     return;
   }
 
-  console.log('[Dispatch] Storing appointment in Supabase database for user:', activeUser.username);
+  console.log('[Dispatch] Storing appointment for user:', activeUser.username);
 
   const addressInput = document.getElementById('serviceAddress');
   const phoneInput = document.getElementById('contactPhone');
@@ -595,17 +593,21 @@ async function submitBooking() {
     created_at: new Date().toISOString()
   };
 
-  // 1. Direct Client-side Supabase Database Insertion
+  // 1. SAVE TO LOCAL STORAGE FOR INSTANT TAB SYNC
+  try {
+    const existing = JSON.parse(localStorage.getItem('flowtech_global_bookings') || '[]');
+    existing.unshift(appointmentRecord);
+    localStorage.setItem('flowtech_global_bookings', JSON.stringify(existing));
+  } catch (e) {}
+
+  // 2. DIRECT CLIENT-SIDE SUPABASE INSERTION
   if (supabaseClient) {
     try {
-      const { data, error } = await supabaseClient.from('bookings').insert([appointmentRecord]);
-      if (!error) console.log('[Supabase DB] Appointment stored successfully:', ticketId);
-    } catch (e) {
-      console.warn('[Supabase DB] Client insertion notice:', e.message);
-    }
+      await supabaseClient.from('bookings').insert([appointmentRecord]);
+    } catch (e) {}
   }
 
-  // 2. Express Backend API Backup Insertion
+  // 3. EXPRESS BACKEND API BACKUP INSERTION
   try {
     fetch(`${API_BASE}/api/dispatch`, {
       method: 'POST',

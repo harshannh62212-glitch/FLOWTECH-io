@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlowTech — Operator Dispatch Console (Live Appointment Reader)</title>
+  <title>FlowTech — Operator Dispatch Console (Triple-Sync Stream)</title>
   <link rel="stylesheet" href="styles.css">
   <!-- Supabase Web SDK CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -78,7 +78,7 @@
 
   <div class="cyber-grid-overlay"></div>
 
-  <!-- OPERATOR SECURITY PIN LOCK SCREEN -->
+  <!-- OPERATOR SECURITY PASSWORD LOCK SCREEN -->
   <div class="pin-lock-overlay" id="pinLockScreen">
     <div class="glass-panel pin-card">
       <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(0, 243, 255, 0.15); border: 2px solid var(--cyan-neon); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; color: var(--cyan-neon); box-shadow: 0 0 25px var(--cyan-glow);">
@@ -145,7 +145,7 @@
         <div>
           <div class="section-tag">LIVE DISPATCH CONTROL CENTER</div>
           <h1 style="font-size: 32px; font-weight: 900; color: #fff;">Customer Appointments & Dispatch Queue</h1>
-          <p style="font-size: 14px; color: var(--text-secondary);">Real-time appointment stream synced with Supabase DB: <span style="font-family: var(--font-mono); color: var(--cyan-neon);">aebntdjjniirnwthtwlx.supabase.co</span></p>
+          <p style="font-size: 14px; color: var(--text-secondary);">Triple-Sync Stream: Supabase DB + Local Storage + Express Server</p>
         </div>
 
         <button class="btn-back" style="display: flex; align-items: center; gap: 8px;" onclick="loadIncomingCalls()">
@@ -265,25 +265,41 @@
     }
 
     async function loadIncomingCalls() {
-      let tickets = [];
+      const ticketMap = new Map();
 
+      // 1. READ FROM LOCAL STORAGE (INSTANT LOCAL TAB BOOKINGS)
+      try {
+        const local = JSON.parse(localStorage.getItem('flowtech_global_bookings') || '[]');
+        local.forEach(t => {
+          if (t && t.ticket_id) ticketMap.set(t.ticket_id, t);
+        });
+      } catch (e) {}
+
+      // 2. READ FROM EXPRESS BACKEND API
       try {
         const res = await fetch(`${API_BASE}/api/incoming-calls`);
         if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
           const data = await res.json();
-          if (data.success && data.tickets) tickets = data.tickets;
+          if (data.success && data.tickets) {
+            data.tickets.forEach(t => ticketMap.set(t.ticket_id, t));
+          }
         }
       } catch (err) {}
 
-      if (tickets.length === 0 && supabaseClient) {
+      // 3. READ DIRECTLY FROM SUPABASE DATABASE
+      if (supabaseClient) {
         try {
           const { data } = await supabaseClient.from('bookings').select('*').order('created_at', { ascending: false });
-          if (data && data.length > 0) tickets = data;
+          if (data && data.length > 0) {
+            data.forEach(t => ticketMap.set(t.ticket_id, t));
+          }
         } catch (e) {}
       }
 
-      renderTicketsTable(tickets);
-      updateMetrics(tickets);
+      const merged = Array.from(ticketMap.values()).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+      renderTicketsTable(merged);
+      updateMetrics(merged);
     }
 
     function renderTicketsTable(tickets) {
@@ -354,6 +370,17 @@
     }
 
     async function updateTicketStatus(ticketId, newStatus) {
+      // 1. Update Local Storage
+      try {
+        const local = JSON.parse(localStorage.getItem('flowtech_global_bookings') || '[]');
+        const item = local.find(b => b.ticket_id === ticketId);
+        if (item) {
+          item.status = newStatus;
+          localStorage.setItem('flowtech_global_bookings', JSON.stringify(local));
+        }
+      } catch (e) {}
+
+      // 2. Update Express API
       try {
         await fetch(`${API_BASE}/api/update-dispatch`, {
           method: 'POST',
@@ -362,6 +389,7 @@
         });
       } catch (err) {}
 
+      // 3. Update Supabase DB
       if (supabaseClient) {
         try {
           await supabaseClient.from('bookings').update({ status: newStatus }).eq('ticket_id', ticketId);
